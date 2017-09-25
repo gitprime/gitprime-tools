@@ -56,7 +56,7 @@ done <<< "${GITPRIME_CONTAINER_LIST}"
 
 echo "Creating support bundle..."
 
-SUPPORT_BUNDLE_NAME="replicated-logs-${TIMESTAMP}.tar.gz"
+SUPPORT_BUNDLE_NAME="gitprime-support-bundle-${TIMESTAMP}.tar.gz"
 
 # Tar/GZ it all up
 tar -C "${TMP_LOG_DIR_ROOT}" -czf "${SUPPORT_BUNDLE_NAME}" ${TMP_LOG_DIR_NAME}
@@ -68,4 +68,3 @@ rm -fr ${TMP_LOG_DIR}
 
 # Put IFS back, just because we should
 IFS=$OLD_IFS
-
