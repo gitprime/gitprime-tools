@@ -3,6 +3,7 @@
 # This code is licensed.  For details, please see the license file at
 # https://github.com/gitprime/gitprime-tools/blob/master/LICENSE.md
 #
+
 # This is a commit-msg hook that captures whether or not a developer
 # has appropriately added a ticket number to their commit message. A
 # ticket number is valid if it meets the pattern:
@@ -32,50 +33,28 @@ then
     source "${GITPRIME_TOOLS_HOME}/library/git.sh"
 fi
 
-# Regex pattern for finding the ticket number in a branch name
-BRANCH_REGEX="^([a-zA-Z]{2,8}-[0-9]+)\/"
-
-# Regex pattern for finding a ticket number at the start of a
-# commit message
-COMMIT_MSG_REGEX="(^|\s)([a-zA-Z]{2,8}-[0-9]+)(:|\s|$)"
-
-# Regex pattern for finding the ticket URL at the end of the
-# commit message.
-URL_REGEX="^http[s]*:\/\/(.*?)\/([a-zA-Z]{2,8}-[0-9]+)$"
-
 # First, we need to check the commit message data:
 COMMIT_MSG_FILE="$1"
 
 COMMIT_MSG_DATA=$(cat "${COMMIT_MSG_FILE}")
 
-BRANCH_TICKET_NUM=0
 COMMIT_MSG_TICKET_NUM=0
 
-FINAL_TICKET_NUM=$(find_ticket_number "${COMMIT_MSG_REGEX}" "${COMMIT_MSG_DATA}")
+FINAL_TICKET_NUM=$(find_ticket_number "${COMMIT_MSG_TICKET_NUM_REGEX}" "${COMMIT_MSG_DATA}")
 
 if [[ $? == 0 ]];
 then
 	# We found it in the commit msg, so we're going to record that.
 	COMMIT_MSG_TICKET_NUM=${FINAL_TICKET_NUM}
 else
-    # We didn't find it, we'll try again
-	BRANCH_NAME=$(git symbolic-ref --short HEAD)
-		
-	if [[ $? == 0 ]];
-	then
-		# Ok we got a branch name.  We just have to parse it.
-		FINAL_TICKET_NUM=$(find_ticket_number "${BRANCH_REGEX}" "${BRANCH_NAME}")
-		
-		if [[ $? == 0 ]];
-		then
-			# We found it!
-			BRANCH_TICKET_NUM=${FINAL_TICKET_NUM}
-		else
-            FINAL_TICKET_NUM=0
-		fi
-    else
+    # We didn't find it, we'll try again with the branch
+    FINAL_TICKET_NUM=$(find_branch_ticket_number)
+
+    if [[ $? != 0 ]];
+    then
+        # Turns out we didn't find it
         FINAL_TICKET_NUM=0
-	fi
+    fi
 fi
 
 if [[ ${FINAL_TICKET_NUM} == 0 ]];
@@ -127,7 +106,7 @@ then
 	log.warn "Could not find a base URL for showing tickets.  Please define it using: "
 	log.warn "   export GITPRIME_TOOLS_TICKET_URL=<url to your tickets>"
 else
-    URL_TEST=$(echo "${TMP_LAST_LINE}" | grep -oE "${URL_REGEX}")
+    URL_TEST=$(echo "${TMP_LAST_LINE}" | grep -oE "${TICKET_URL_REGEX}")
 
     URL_TEST_RESULT=$?
 

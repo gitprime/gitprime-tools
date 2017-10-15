@@ -5,12 +5,28 @@
 #
 # This file contains functions used by git tools.
 
+# A few constants
+
+# Regex pattern for finding the ticket number in a branch name
+BRANCH_TICKET_NUM_REGEX="^([a-zA-Z]{2,8}-[0-9]+)\/"
+
+# Regex pattern for finding a ticket number at the start of a
+# commit message
+COMMIT_MSG_TICKET_NUM_REGEX="(^|\s)([a-zA-Z]{2,8}-[0-9]+)(:|\s|$)"
+
+# Regex pattern for finding the ticket URL at the end of the
+# commit message.
+TICKET_URL_REGEX="^http[s]*:\/\/(.*?)\/([a-zA-Z]{2,8}-[0-9]+)$"
+
 # This function retrieves a ticket number from the given content
 # using the given regex.  It will only use the first uncommented
 # line of the file.
 #
 # parameter: regex
 # parameter: content to scan
+#
+# Echo's the ticket number if one is found
+# Returns 1 if none is found.
 function find_ticket_number()
 {
 	TMP_REGEX="$1"
@@ -49,4 +65,32 @@ function find_ticket_number()
 	else
 	    return 1
 	fi
+}
+
+# Attempts to find a ticket number from the branch name.
+#
+function find_branch_ticket_number()
+{
+    TMP_OUTPUT=0
+
+	BRANCH_NAME=$(git symbolic-ref --short HEAD)
+
+	if [[ $? == 0 ]];
+	then
+		# Ok we got a branch name.  We just have to parse it.
+		TMP_OUTPUT=$(find_ticket_number "${BRANCH_TICKET_NUM_REGEX}" "${BRANCH_NAME}")
+
+		if [[ $? != 0 ]];
+		then
+		    # No go
+            TMP_OUTPUT=0
+		fi
+	fi
+
+	if [[ ${TMP_OUTPUT} == 0 ]];
+	then
+        exit 1
+    fi
+
+    echo -n "${TMP_OUTPUT}"
 }

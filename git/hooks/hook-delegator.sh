@@ -89,5 +89,3 @@ do
         done
     fi
 done
-
-exit 1

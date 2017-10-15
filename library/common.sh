@@ -38,6 +38,14 @@ function setup_colors()
     fi
 }
 
+# This method is a generic logging method that takes 3 basic levels:
+#    INFO: General information
+#    WARN: Something that should be brought to a user's attention
+#    ERROR: Something very serious.
+#
+# Parameters:
+#    level:  The appropriate level
+#    message:  The message to log.
 function log_root()
 {
     setup_colors
@@ -66,27 +74,32 @@ function log_root()
 	echo -e "${HEADER} ${MESSAGE}"
 }
 
+# Logs the given message at an "INFO" level
 function log.info
 {
     log_root "INFO" "$*"
 }
 
+# Alias for the log.info function
 function log
 {
     log.info "$*"
 }
 
+# Logs the given message at a "WARN" level
 function log.warn
 {
     log_root "WARN" "$*"
 }
 
+# Logs the given message at an "ERROR" level
 function log.error
 {
     log_root "ERROR" "$*"
 }
 
-
+# This method reacts to the given error code.  If the code is non-zero
+# the method exits the script and logs the given message.
 function react_to_exit_code()
 {
     exit_code=$1
@@ -101,6 +114,8 @@ function react_to_exit_code()
     fi
 }
 
+# Handles an exit based on the given code.
+# All other parameters are treated as a message to log before exiting.
 function handle_exit()
 {
     EXIT_CODE=$1
@@ -109,12 +124,18 @@ function handle_exit()
 
     if [[ ! -z "$@" ]];
     then
-        log "Exiting: $*"
+        if [[ ${EXIT_CODE} == 0 ]];
+        then
+            log.info "Exiting: $*"
+        else
+            log.error "Exiting with error: $*"
+        fi
     fi
 
     exit "${EXIT_CODE}"
 }
 
+# This validates that a given directory is a valid GPT home directory.
 function validate_gpt_home()
 {
     POTENTIAL_GPT_HOME="$1"
@@ -148,6 +169,15 @@ function validate_gpt_home()
     return 1
 }
 
+# Attempts to find a valid GTP home directory.  It does this with the
+# following logic:
+#
+#    1. Look for the GITPRIME_TOOLS_HOME environment variable to be set
+#    2. Look for a .gitprime-tools directory in the user's home directory.
+#    3. Use the current running script to try and find one in the root
+#
+# If a home is found, we echo the full path
+# If none can be found, we return 1.
 function find_gpt_home()
 {
     STARTING_POINT="$1"
