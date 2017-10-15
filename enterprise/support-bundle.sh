@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# This code is licensed.  For details, please see the license file at
+# https://github.com/gitprime/gitprime-tools/blob/master/LICENSE.md
+#
 
 # Going to change IFS for the purposes of parsing here
 OLD_IFS=$IFS
