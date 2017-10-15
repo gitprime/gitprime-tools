@@ -42,6 +42,8 @@ function validate_gpt_home()
 
 function find_gpt_home()
 {
+    STARTING_POINT="$1"
+
     FOUND_HOME=0
 
     if [[ -z "${GITPRIME_TOOLS_HOME}" ]];
@@ -59,10 +61,9 @@ function find_gpt_home()
             fi
         fi
 
-
         if [[ ${FOUND_HOME} == 0 ]];
         then
-            POTENTIAL_GPT_HOME="${BASH_SOURCE[0]}"
+            POTENTIAL_GPT_HOME="${STARTING_POINT}"
 
             if [[ -h "${POTENTIAL_GPT_HOME}" ]];
             then
@@ -73,16 +74,25 @@ function find_gpt_home()
             # Now we need the directory name
             POTENTIAL_GPT_HOME=$(dirname "${POTENTIAL_GPT_HOME}")
 
-            # Ok, at this point we should end with /git/hooks.
-            if [[ "${POTENTIAL_GPT_HOME}" == *"/git/hooks" ]];
-            then
-                # Ok, we're pretty sure this is a GitPrime tools home directory,
-                # but we need to trim that off the end.
-                POTENTIAL_GPT_HOME=${POTENTIAL_GPT_HOME::${#POTENTIAL_GPT_HOME}-10}
-            fi
+            # Start crawling up the directories until we find a good GPT home.
+            while [[ -d "${POTENTIAL_GPT_HOME}" ]];
+            do
+                validate_gpt_home "${POTENTIAL_GPT_HOME}"
+
+                if [[ $? == 0 ]];
+                then
+                    # We found one.  Set it for output and break
+                    FOUND_HOME="${POTENTIAL_GPT_HOME}"
+
+                    break
+                fi
+
+                # None found, so we'll go up another level
+                POTENTIAL_GPT_HOME=$(dirname "${POTENTIAL_GPT_HOME}")
+            done
         fi
     else
-        # Just use the one we have
+        # Just use the one we have set in the environment already
         FOUND_HOME="${GITPRIME_TOOLS_HOME}"
     fi
 
