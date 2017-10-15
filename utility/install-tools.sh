@@ -9,12 +9,15 @@
 
 # Some variables we need and will be setting
 
+# The clone URL to use with GitHub to get the tools
+GPT_CLONE_URL="https://github.com/gitprime/gitprime-tools.git"
+
 # The home directory for the tools
 if [[ ! -z "${GITPRIME_TOOLS_HOME}" ]];
 then
     GPT_HOME="${GITPRIME_TOOLS_HOME}"
 else
-    GPT_HOME=0
+    GPT_HOME="${HOME}/.gitprime-tools"
 fi
 
 # The base URL for tickets
@@ -24,6 +27,10 @@ then
 else
     GPT_TICKET_URL=0
 fi
+
+# The header and footer lines where we hide stuff between.
+GPT_HEADER_LINE="########################## GitPrime Tools START ##########################"
+GPT_FOOTER_LINE="########################## GitPrime Tools STOP  ##########################"
 
 # Just a placeholder, we'll overwrite it
 GPT_COLOR_ENABLED=""
