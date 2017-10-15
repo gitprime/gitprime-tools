@@ -3,6 +3,118 @@
 # This code is licensed.  For details, please see the license file at
 # https://github.com/gitprime/gitprime-tools/blob/master/LICENSE.md
 #
+
+# Before we log anything, we need to setup some colors.  We found some neat stuff at:
+# https://unix.stackexchange.com/questions/9957/how-to-check-if-bash-can-print-colors.
+# This function will setup the colors once if they haven't been already
+function setup_colors()
+{
+    if [[ -z ${GPT_COLOR_ENABLED} ]];
+    then
+        # We've never set the GPT_COLOR_ENABLED before.  So we should
+        # use our nifty logic to setup some color variables
+        if test -t 1; then
+            # see if it supports colors...
+            COLOR_TEST=$(tput colors)
+
+            if test -n "${COLOR_TEST}" && test ${COLOR_TEST} -ge 8;
+            then
+                bold="$(tput bold)"
+                underline="$(tput smul)"
+                standout="$(tput smso)"
+                normal="$(tput sgr0)"
+                black="$(tput setaf 0)"
+                red="$(tput setaf 1)"
+                green="$(tput setaf 2)"
+                yellow="$(tput setaf 3)"
+                blue="$(tput setaf 4)"
+                magenta="$(tput setaf 5)"
+                cyan="$(tput setaf 6)"
+                white="$(tput setaf 7)"
+            fi
+        fi
+
+        export GPT_COLOR_ENABLED=1
+    fi
+}
+
+function log_root()
+{
+    setup_colors
+
+    # We'll use level to build a header
+    LEVEL="$1"
+
+    shift 1
+
+    MESSAGE="$*"
+
+    HEADER="[GP-TOOLS]"
+
+    if [[ "${LEVEL}" == "ERROR" ]];
+    then
+        HEADER="${red}${HEADER}"
+    fi
+
+    if [[ "${LEVEL}" == "WARN" ]];
+    then
+        HEADER="${yellow}${HEADER}"
+    fi
+
+    HEADER="${bold}${HEADER}${normal}"
+
+	echo -e "${HEADER} ${MESSAGE}"
+}
+
+function log.info
+{
+    log_root "INFO" "$*"
+}
+
+function log
+{
+    log.info "$*"
+}
+
+function log.warn
+{
+    log_root "WARN" "$*"
+}
+
+function log.error
+{
+    log_root "ERROR" "$*"
+}
+
+
+function react_to_exit_code()
+{
+    exit_code=$1
+
+    shift 1
+
+    log_message="$*"
+
+    if [[ ${exit_code} != 0 ]];
+    then
+        handle_exit 1000 "$log_message"
+    fi
+}
+
+function handle_exit()
+{
+    EXIT_CODE=$1
+
+    shift
+
+    if [[ ! -z "$@" ]];
+    then
+        log "Exiting: $*"
+    fi
+
+    exit "${EXIT_CODE}"
+}
+
 function validate_gpt_home()
 {
     POTENTIAL_GPT_HOME="$1"
@@ -10,21 +122,17 @@ function validate_gpt_home()
     VALID_GPT_HOME=1
 
     # The following are directories that we recognize as a valid GITPRIME_TOOLS_HOME
-    declare -a TMP_SUBDIRS
+    declare -a TMP_SUB_DIRS
 
-    TMP_SUBDIRS[0]="aliases"
-    TMP_SUBDIRS[1]="bin"
-    TMP_SUBDIRS[2]="git"
-    TMP_SUBDIRS[3]="library"
-    TMP_SUBDIRS[4]="utility"
+    TMP_SUB_DIRS[0]="aliases"
+    TMP_SUB_DIRS[1]="bin"
+    TMP_SUB_DIRS[2]="git"
+    TMP_SUB_DIRS[3]="library"
+    TMP_SUB_DIRS[4]="utility"
 
-    COUNTER=0
-
-    while [[ ${COUNTER} -lt 5 ]];
+    for TMP_SUB_DIR in "${TMP_SUB_DIRS[@]}"
     do
-        COUNTER=$((COUNTER + 1))
-
-        if [[ ! -d "${POTENTIAL_GPT_HOME}/${TMP_SUBDIRS[COUNTER]}" ]];
+        if [[ ! -d "${POTENTIAL_GPT_HOME}/${TMP_SUB_DIR}" ]];
         then
             VALID_GPT_HOME=0
 

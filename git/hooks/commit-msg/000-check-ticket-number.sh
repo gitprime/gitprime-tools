@@ -23,6 +23,15 @@
 #
 #   4. We will also make sure that there is a URL that contains
 #      the ticket number on the last line of the commit message.
+
+# First up, we need some includes
+if [[ ! -z "${GITPRIME_TOOLS_HOME}" ]];
+then
+    # Ok, we have GITPRIME_TOOLS_HOME set.  We can use that as our base for includes
+    source "${GITPRIME_TOOLS_HOME}/library/common.sh"
+    source "${GITPRIME_TOOLS_HOME}/library/git.sh"
+fi
+
 # Regex pattern for finding the ticket number in a branch name
 BRANCH_REGEX="^([a-zA-Z]{2,8}-[0-9]+)\/"
 
@@ -72,12 +81,12 @@ fi
 if [[ ${FINAL_TICKET_NUM} == 0 ]];
 then
 	# Ok, we couldn't find a ticket number at all.  We need to print that out and exit.
-	echo -e "\e[91m\e[1mERROR:\e[21m\e[39m Could not find a valid ticket number in the commit message."
-	echo -e "       You must supply a ticket number at the beginning of the commit message"
-	echo -e "       or at the beginning of the branch name.  For example:"
-	echo -e ""
-	echo -e "       \e[1mCommit Message\e[21m: TICK-1234: This is a good message"
-	echo -e "       \e[1mBranch Name\e[21m:    TICK-1234/This-is-a-good-branch"
+	log.error "Could not find a valid ticket number in the commit message."
+	log.error "You must supply a ticket number at the beginning of the commit message"
+	log.error "or at the beginning of the branch name.  For example:"
+	log.error ""
+	log.error "   ${bold}Commit Message${normal}: TICK-1234: This is a good message"
+	log.error "   ${bold}Branch Name${normal}:    TICK-1234/This-is-a-good-branch"
 	
 	exit 100
 fi
@@ -115,8 +124,8 @@ done <<< "${COMMIT_MSG_DATA}"
 
 if [[ "${GITPRIME_TOOLS_TICKET_URL}" == "" ]];
 then
-	echo -e "\e[91m\e[1mERROR:\e[21m\e[39m Could not find a base URL for showing tickets.  Please define it using: "
-	echo -e "       export GITPRIME_TOOLS_TICKET_URL=<url to your tickets>"
+	log.warn "Could not find a base URL for showing tickets.  Please define it using: "
+	log.warn "   export GITPRIME_TOOLS_TICKET_URL=<url to your tickets>"
 else
     URL_TEST=$(echo "${TMP_LAST_LINE}" | grep -oE "${URL_REGEX}")
 
@@ -134,24 +143,3 @@ if [[ ${WRITE_NEW_MESSAGE} == 1 ]];
 then
     echo "${COMMIT_MSG_DATA}" > "${COMMIT_MSG_FILE}"
 fi
-
-# Finally, we're going to do something fun and weird:  we're going to see if the git
-# repository has a gp-tools/hooks directory.  If it does, we'll execute any hook that
-# matches the name of this one.
-HOOK_NAME=$(basename "$0")
-
-TMP_COMMIT_HOOK_PATH="$(pwd)/gp-tools/hooks/${HOOK_NAME}"
-
-if [[ -x "${TMP_COMMIT_HOOK_PATH}" ]];
-then
-    ${TMP_COMMIT_HOOK_PATH} $@
-
-    if [[ $? != 0 ]];
-    then
-        echo -e "\e[91m\e[1mERROR:\e[21m\e[39m Failed to execute hook at gp-tools/hooks/${HOOK_NAME}"
-
-        exit 200
-    fi
-fi
-
-exit 1
