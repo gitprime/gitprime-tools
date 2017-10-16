@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This code is licensed.  For details, please see the license file at
 # https://github.com/gitprime/gitprime-tools/blob/master/LICENSE.md
@@ -35,6 +35,9 @@ GPT_FOOTER_LINE="########################## GitPrime Tools STOP  ###############
 # Just a placeholder, we'll overwrite it
 GPT_COLOR_ENABLED=""
 
+# A tmp directory to do some work in
+TMP_DIRECTORY=0
+
 # Setup colors for logging and stuff
 #
 # NOTE:  This is somewhat duplicated from the common.sh in library.  Sadly,
@@ -48,7 +51,7 @@ function setup_colors()
         # use our nifty logic to setup some color variables
         if test -t 1; then
             # see if it supports colors...
-            COLOR_TEST=$(tput colors)
+            local COLOR_TEST=$(tput colors)
 
             if test -n "${COLOR_TEST}" && test ${COLOR_TEST} -ge 8;
             then
@@ -67,13 +70,13 @@ function setup_colors()
 # NOTE:  This is somewhat duplicated from the common.sh in library.  Sadly,
 # NOTE:  we don't have it locally when this script is run, so we have to
 # NOTE:  duplicate it.
-function log_root()
+function log()
 {
     setup_colors
 
-    MESSAGE="$*"
+    local MESSAGE="$*"
 
-    HEADER="${bold}[GP-TOOLS]${normal}"
+    local HEADER="${bold}[GP-TOOLS]${normal}"
 
 	echo -e "${HEADER} ${MESSAGE}"
 }
@@ -81,22 +84,34 @@ function log_root()
 # Parse the command line arguments we accept
 function parse_options()
 {
-    output=0
+    local OUTPUT=0
 
     while test -n "$1"; do
         case "$1" in
             --home)
-                GPT_HOME=$2
-                shift 2
+                if test -n "$2";
+                then
+                    GPT_HOME=$2
+                    shift 2
+                else
+                    OUTPUT=3
+                    shift 1
+                fi
                 ;;
 
-            --ticket-base-url)
-                GPT_TICKET_URL=$2
-                shift 2
+            --ticket-url)
+                if test -n "$2";
+                then
+                    GPT_TICKET_URL=$2
+                    shift 2
+                else
+                    OUTPUT=3
+                    shift 1
+                fi
                 ;;
 
             --help)
-                output=2
+                OUTPUT=2
                 shift 1
                 ;;
 
@@ -106,13 +121,24 @@ function parse_options()
         esac
     done
 
-    return ${output}
+    return ${OUTPUT}
 }
 
 # This function prints the help for the tool
 function print_help()
 {
-
+    log "This script installs the GitPrime Development Tools.  To use the tool"
+    log "you can execute the installer with the following options: "
+    log ""
+    log "   --home:  Sets the home directory where the tools will be installed."
+    log "            This defaults to ${HOME}/.gitprime-tools"
+    log ""
+    log "   --ticket-url:  Sets the base URL used for ticket lookups.  This should"
+    log "                  expect that the ticket number will be pre-pended after "
+    log "                  the URL.  This value has no default."
+    log ""
+    log "   --help:  Shows this help information."
+    log ""
 }
 
 # This method reacts to the given error code.  If the code is non-zero
@@ -123,13 +149,13 @@ function print_help()
 # NOTE:  duplicate it.
 function react_to_exit_code()
 {
-    exit_code=$1
+    local EXIT_CODE=$1
 
     shift 1
 
     log_message="$*"
 
-    if [[ ${exit_code} != 0 ]];
+    if [[ ${EXIT_CODE} != 0 ]];
     then
         handle_exit 1000 "$log_message"
     fi
@@ -143,9 +169,14 @@ function react_to_exit_code()
 # NOTE:  duplicate it.
 function handle_exit()
 {
-    EXIT_CODE=$1
+    local EXIT_CODE=$1
 
     shift
+
+    if [[ ${TMP_DIRECTORY} != 0 ]];
+    then
+        rm -fr "${TMP_DIRECTORY}"
+    fi
 
     if [[ ! -z "$@" ]];
     then
@@ -154,3 +185,76 @@ function handle_exit()
 
     exit "${EXIT_CODE}"
 }
+
+parse_options $@
+
+OPTION_RESULTS=$?
+
+if [[ ${OPTION_RESULTS} == 2 ]];
+then
+    print_help
+
+    handle_exit 1
+else
+    react_to_exit_code ${OPTION_RESULTS} "Incorrect Options.  See help for more information."
+fi
+
+log "About to install the GitPrime Development tools to ${GPT_HOME}."
+
+if [[ ${GPT_TICKET_URL} != 0 ]];
+then
+    # TODO: Make sure the URL has a trailing /
+    log "Setting the base ticket URL to: ${GPT_TICKET_URL}"
+fi
+
+# Ok, we have enough data to continue, lets validate a few things.
+TMP_BASE_DIR=$(dirname "${GPT_HOME}")
+
+if [[ ! -w "${TMP_BASE_DIR}" ]];
+then
+    handle_exit 100 "No permission to create home directory at ${GPT_HOME}"
+fi
+
+# Ok, we need to clone the repo
+GIT_TEST=$(git --help 2>&1)
+
+if [[ $? != 0 ]];
+then
+    handle_exit 200 "Git does not seem to be present on this system.  Please make sure its installed and in the path."
+fi
+
+TMP_DIRECTORY=$(mktemp -d)
+
+react_to_exit_code $? "Could not create appropriate temp directory"
+
+log "Using temporary directory: ${TMP_DIRECTORY}"
+
+git clone "${GPT_CLONE_URL}" "${TMP_DIRECTORY}/gitprime-tools" > /dev/null 2>&1
+
+react_to_exit_code $? "Could not download the GitPrime Developer Tools."
+
+log "Downloaded the installation package"
+
+# Ok, we've cloned it, now we just need to copy it into place or *overwrite* the old version.
+if [[ -d "${GPT_HOME}" ]];
+then
+    rm -fr "${GPT_HOME}"
+
+    react_to_exit_code $? "Could not remove old copy of the GitPrime Developer Tools."
+fi
+
+mv "${TMP_DIRECTORY}/gitprime-tools" "${GPT_HOME}"
+
+log "Installed GitPrime Developer Tools at ${GPT_HOME}"
+
+export GITPRIME_TOOLS_HOME="${GPT_HOME}"
+
+export GITPRIME_TOOLS_TICKET_URL="${GPT_TICKET_URL}"
+
+# Ok, now that we've successfully done that, we can actually start using the tools
+# that are built into our toolset. We can now load stuff we need
+source "${GITPRIME_TOOLS_HOME}/library/common.sh"
+
+
+
+handle_exit 0 "Installation Completed"

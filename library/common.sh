@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This code is licensed.  For details, please see the license file at
 # https://github.com/gitprime/gitprime-tools/blob/master/LICENSE.md
@@ -15,6 +15,8 @@ function setup_colors()
         # use our nifty logic to setup some color variables
         if test -t 1; then
             # see if it supports colors...
+            local COLOR_TEST
+
             COLOR_TEST=$(tput colors)
 
             if test -n "${COLOR_TEST}" && test ${COLOR_TEST} -ge 8;
@@ -39,6 +41,7 @@ function setup_colors()
 }
 
 # This method is a generic logging method that takes 3 basic levels:
+#
 #    INFO: General information
 #    WARN: Something that should be brought to a user's attention
 #    ERROR: Something very serious.
@@ -51,13 +54,13 @@ function log_root()
     setup_colors
 
     # We'll use level to build a header
-    LEVEL="$1"
+    local LEVEL="$1"
 
     shift 1
 
-    MESSAGE="$*"
+    local MESSAGE="$*"
 
-    HEADER="[GP-TOOLS]"
+    local HEADER="[GP-TOOLS]"
 
     if [[ "${LEVEL}" == "ERROR" ]];
     then
@@ -102,13 +105,13 @@ function log.error
 # the method exits the script and logs the given message.
 function react_to_exit_code()
 {
-    exit_code=$1
+    local EXIT_CODE=$1
 
     shift 1
 
     log_message="$*"
 
-    if [[ ${exit_code} != 0 ]];
+    if [[ ${EXIT_CODE} != 0 ]];
     then
         handle_exit 1000 "$log_message"
     fi
@@ -118,7 +121,7 @@ function react_to_exit_code()
 # All other parameters are treated as a message to log before exiting.
 function handle_exit()
 {
-    EXIT_CODE=$1
+    local EXIT_CODE=$1
 
     shift
 
@@ -138,15 +141,15 @@ function handle_exit()
 # This validates that a given directory is a valid GPT home directory.
 function validate_gpt_home()
 {
-    POTENTIAL_GPT_HOME="$1"
+    local POTENTIAL_GPT_HOME="$1"
 
-    VALID_GPT_HOME=1
+    local VALID_GPT_HOME=1
 
     # The following are directories that we recognize as a valid GITPRIME_TOOLS_HOME
     declare -a TMP_SUB_DIRS
 
-    TMP_SUB_DIRS[0]="aliases"
-    TMP_SUB_DIRS[1]="bin"
+    TMP_SUB_DIRS[0]="bin"
+    TMP_SUB_DIRS[1]="bin/commands"
     TMP_SUB_DIRS[2]="git"
     TMP_SUB_DIRS[3]="library"
     TMP_SUB_DIRS[4]="utility"
@@ -180,53 +183,55 @@ function validate_gpt_home()
 # If none can be found, we return 1.
 function find_gpt_home()
 {
-    STARTING_POINT="$1"
+    local STARTING_POINT="$1"
 
-    FOUND_HOME=0
+    local FOUND_HOME=0
+
+    local OUTPUT=""
 
     if [[ -z "${GITPRIME_TOOLS_HOME}" ]];
     then
         # We don't have a GITPRIME_TOOLS_HOME, but we may be able to find one.
         if [[ -d "${HOME}/.gitprime-tools" ]];
         then
-            POTENTIAL_GPT_HOME="${HOME}/.gitprime-tools"
+            OUTPUT="${HOME}/.gitprime-tools"
 
-            validate_gpt_home "${POTENTIAL_GPT_HOME}"
+            validate_gpt_home "${OUTPUT}"
 
             if [[ $? == 0 ]];
             then
-                FOUND_HOME="${POTENTIAL_GPT_HOME}"
+                FOUND_HOME="${OUTPUT}"
             fi
         fi
 
         if [[ ${FOUND_HOME} == 0 ]];
         then
-            POTENTIAL_GPT_HOME="${STARTING_POINT}"
+            OUTPUT="${STARTING_POINT}"
 
-            if [[ -h "${POTENTIAL_GPT_HOME}" ]];
+            if [[ -h "${OUTPUT}" ]];
             then
                 # This was a symlink, so we'll go find the root
-                POTENTIAL_GPT_HOME=$(readlink -f "${POTENTIAL_GPT_HOME}")
+                OUTPUT=$(readlink -f "${OUTPUT}")
             fi
 
             # Now we need the directory name
-            POTENTIAL_GPT_HOME=$(dirname "${POTENTIAL_GPT_HOME}")
+            OUTPUT=$(dirname "${OUTPUT}")
 
             # Start crawling up the directories until we find a good GPT home.
-            while [[ -d "${POTENTIAL_GPT_HOME}" ]];
+            while [[ -d "${OUTPUT}" ]];
             do
-                validate_gpt_home "${POTENTIAL_GPT_HOME}"
+                validate_gpt_home "${OUTPUT}"
 
                 if [[ $? == 0 ]];
                 then
                     # We found one.  Set it for output and break
-                    FOUND_HOME="${POTENTIAL_GPT_HOME}"
+                    FOUND_HOME="${OUTPUT}"
 
                     break
                 fi
 
                 # None found, so we'll go up another level
-                POTENTIAL_GPT_HOME=$(dirname "${POTENTIAL_GPT_HOME}")
+                OUTPUT=$(dirname "${OUTPUT}")
             done
         fi
     else
