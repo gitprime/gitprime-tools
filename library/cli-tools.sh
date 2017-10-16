@@ -7,14 +7,18 @@
 # The functions in this file are intended to help developers deal with
 # bash CLI option parsing.
 
+# We need some common functionality here
+source "${GITPRIME_TOOLS_HOME}/library/common.sh"
+
 # We're going to declare a bunch of arrays that we can then use to keep track
-# of the args.
+# of the args and our processing of them
 declare -a GPT_ARG_PARSER_NAMES
 declare -a GPT_ARG_PARSER_SHORT_NAMES
 declare -a GPT_ARG_PARSER_DESCRIPTIONS
 declare -a GPT_ARG_PARSER_TYPES
 declare -a GPT_ARG_PARSER_REQUIREMENTS
 declare -a GPT_ARG_PARSER_RESULTS
+declare -a GPT_ARG_PARSER_ERRORS
 
 GPT_ARG_TYPE_FLAG=0
 GPT_ARG_TYPE_VALUE=1
@@ -32,7 +36,85 @@ GPT_ARG_TYPE_VALUE=1
 #   description:  A help description of the argument.
 function add_cli_argument()
 {
+    local long_name
+    local short_name
+    local type
+    local required
+    local description
 
+    # Ok, our variables are declared, lets do a little validation.
+    if [[ -z "$1" ]];
+    then
+        log.error "No long name specified for add_cli_argument"
+
+        return 1
+    else
+        long_name="$1"
+    fi
+
+    if [[ -z "$2" ]];
+    then
+        log.error "No short name specified for argument ${long_name}"
+
+        return 1
+    else
+        short_name="$2"
+    fi
+
+    if [[ -z "$3" ]];
+    then
+        log.error "No type specified for argument ${long_name}"
+
+        return 1
+    else
+        if [[ "$3" == "${GPT_ARG_TYPE_FLAG}" ]];
+        then
+            type=${GPT_ARG_TYPE_FLAG}
+        elif [[ "$3" == "${GPT_ARG_TYPE_VALUE}" ]];
+        then
+            type=${GPT_ARG_TYPE_VALUE}
+        else
+            log.error "Invalid type specified for argument ${long_name}.  Must be equal to GPT_ARG_TYPE_FLAG or GPT_ARG_TYPE_VALUE"
+
+            return 1
+        fi
+    fi
+
+    if [[ -z "$4" ]];
+    then
+        log.error "No requirement specified for argument ${long_name}"
+
+        return 1
+    else
+        local arg_test
+
+        arg_test=$(echo "$4" | tr '[:lower:]' '[:upper:]')
+
+        if [ "${arg_test}" == "1" ] || [ "${arg_test}" == "TRUE" ];
+        then
+            required=1
+        elif [ "${arg_test}" == "0" ] || [ "${arg_test}" == "FALSE" ];
+        then
+            required=0
+        else
+            log.error "Invalid requirement specified for argument ${long_name}.  Must be 0 or 1"
+
+            return 1
+        fi
+    fi
+
+    if [[ -z "$5" ]];
+    then
+        description="$5"
+    fi
+
+    # Ok, we've validated the data, now we just have to populate our arrays.
+
+}
+
+function clear_cli_arguments()
+{
+    echo
 }
 
 function parse_cli_arguments()

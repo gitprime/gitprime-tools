@@ -61,6 +61,7 @@ if [[ ! -z "${GITPRIME_TOOLS_HOME}" ]];
 then
     # Ok, we have GITPRIME_TOOLS_HOME set.  We can use that as our base for includes
     source "${GITPRIME_TOOLS_HOME}/library/common.sh"
+    source "${GITPRIME_TOOLS_HOME}/library/cli-tools.sh"
 else
     # Nope still don't have a home, we need to throw an error
     echo -e "ERROR: GITPRIME_TOOLS_HOME is not set.  Please set it in your .profile or .bashrc."
@@ -71,4 +72,4 @@ else
     exit 999
 fi
 
-log.info "GitPrime Tools Called with: $@"
+log.info "GitPrime Development Tools Called with: $@"
