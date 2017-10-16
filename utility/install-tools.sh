@@ -270,7 +270,7 @@ CHOSEN_ENV_FILE=0
 
 for TEST_ENV_FILE in "${ENV_FILES[@]}";
 do
-    if [[ -x "${TEST_ENV_FILE}" ]];
+    if [[ -f "${TEST_ENV_FILE}" ]];
     then
         CHOSEN_ENV_FILE="${TEST_ENV_FILE}"
 
