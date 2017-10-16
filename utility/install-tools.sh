@@ -33,7 +33,7 @@ GPT_HEADER_LINE="########################## GitPrime Tools START ###############
 GPT_FOOTER_LINE="########################## GitPrime Tools STOP  ##########################"
 
 # Just a placeholder, we'll overwrite it
-GPT_COLOR_ENABLED=""
+INST_GPT_COLOR_ENABLED=""
 
 # A tmp directory to do some work in
 TMP_DIRECTORY=0
@@ -45,7 +45,7 @@ TMP_DIRECTORY=0
 # NOTE:  duplicate it.
 function setup_colors()
 {
-    if [[ -z ${GPT_COLOR_ENABLED} ]];
+    if [[ -z ${INST_GPT_COLOR_ENABLED} ]];
     then
         # We've never set the GPT_COLOR_ENABLED before.  So we should
         # use our nifty logic to setup some color variables
@@ -60,7 +60,7 @@ function setup_colors()
             fi
         fi
 
-        export GPT_COLOR_ENABLED=1
+        export INST_GPT_COLOR_ENABLED=1
     fi
 }
 
@@ -215,6 +215,8 @@ then
     handle_exit 100 "No permission to create home directory at ${GPT_HOME}"
 fi
 
+
+
 # Ok, we need to clone the repo
 GIT_TEST=$(git --help 2>&1)
 
@@ -255,6 +257,71 @@ export GITPRIME_TOOLS_TICKET_URL="${GPT_TICKET_URL}"
 # that are built into our toolset. We can now load stuff we need
 source "${GITPRIME_TOOLS_HOME}/library/common.sh"
 
+# Our next major step is that we need to add something into the .bashrc or .profile of our
+# user so that they have access to the environment and some other stuff.  We need
+# to pick which one we want.  I believe we prefer .bashrc
+declare -a ENV_FILES
 
+ENV_FILES[0]="${HOME}/.bashrc"
+ENV_FILES[1]="${HOME}/.profile"
+ENV_FILES[2]="${HOME}/.bash_profile"
 
-handle_exit 0 "Installation Completed"
+CHOSEN_ENV_FILE=0
+
+for TEST_ENV_FILE in "${ENV_FILES[@]}";
+do
+    if [[ -x "${TEST_ENV_FILE}" ]];
+    then
+        CHOSEN_ENV_FILE="${TEST_ENV_FILE}"
+
+        break
+    fi
+done
+
+if [[ ${CHOSEN_ENV_FILE} == 0 ]];
+then
+    # Hmmm we don't see to have any of them.  We're going to check some things.
+    CHOSEN_ENV_FILE=${ENV_FILES[0]}
+
+    log.warn "No environment/profile file could be found.  We're defaulting to ${CHOSEN_ENV_FILE}"
+fi
+
+if [[ -f "${CHOSEN_ENV_FILE}" ]];
+then
+    # We're going to backup the old file
+    TMP_DATE=$( date +%Y-%m-%d-%H-%M-%S)
+
+    cp "${CHOSEN_ENV_FILE}" "${CHOSEN_ENV_FILE}.${TMP_DATE}.bak"
+fi
+
+log.info "Configuring GitPrime Development Tools to load from ${CHOSEN_ENV_FILE}"
+
+# First thing, we remove any old settings
+sed -i "/${GPT_HEADER_LINE}/,/${GPT_FOOTER_LINE}/d" "${CHOSEN_ENV_FILE}"
+
+# Next, we just append our stuff to the end
+echo "${GPT_HEADER_LINE}" >> "${CHOSEN_ENV_FILE}"
+
+# Setup the home variable
+echo "export GITPRIME_TOOLS_HOME=\"${GPT_HOME}\"" >> "${CHOSEN_ENV_FILE}"
+
+# Setup the ticket variable if we have it
+if [[ ${GPT_TICKET_URL} != 0 ]];
+then
+    echo "export GITPRIME_TOOLS_TICKET_URL=\"${GPT_TICKET_URL}\"" >> "${CHOSEN_ENV_FILE}"
+fi
+
+# Set the aliases to load
+echo "source ${GPT_HOME}/library/aliases.sh" >> "${CHOSEN_ENV_FILE}"
+
+# Close it out with the footer
+echo "${GPT_FOOTER_LINE}" >> "${CHOSEN_ENV_FILE}"
+
+log.info "Installation completed."
+
+log.warn "The tools have been successfully installed.  However, you will not be able to"
+log.warn "use them until you have reloaded your shell environment.  It is suggested that"
+log.warn "you logout and log back in."
+
+handle_exit 0
+
