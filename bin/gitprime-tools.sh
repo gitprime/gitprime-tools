@@ -122,38 +122,67 @@ else
     exit 999
 fi
 
+GPT_FUNCTION_MODE="execute"
+
 OUR_COMMAND="$1"
 
 shift
+
+if [[ "${OUR_COMMAND}" == "help" ]];
+then
+    # If we got help, we're moving to help mode.
+    GPT_FUNCTION_MODE="help"
+
+    OUR_COMMAND="$1"
+
+    shift
+fi
 
 OUR_ARGUMENTS=$@
 
 populate_valid_command_array
 
-if array_contains_value "${OUR_COMMAND}" "${GPT_VALID_COMMANDS[@]}";
+if [[ -z "${OUR_COMMAND}" ]];
 then
-    # Ok, we go this far, now we need to do some logic
-    if [[ "${OUR_COMMAND}" == "help" ]];
+    # Hmmm no command is specified.  This is fine if we're doing "help"
+    # but otherwise we need to throw an error.
+    if [[ "${GPT_FUNCTION_MODE}" != "help" ]];
     then
-        # We're going to keep the help logic embedded inside this tool.
-        # In the future, we could technically move it out to its own
-        # command in the commands directory.
-        #
-        # To do this, we're going to actually need to load the command
-        # if its valid.  This means basically repeating the logic we just did with
-        # new arguments
-        show_help
-    else
+        log.error "No command was specified. You must specify a command."
+    fi
+
+    log.error "GitPrime Development Tools command reference:"
+    log.info "Proper syntax: gpt <command name> <options>"
+    log.info ""
+    log.info "Available Commands:"
+
+    for available_command in "${GPT_VALID_COMMANDS[@]}";
+    do
+        log.info "    ${bold}${available_command}${normal}"
+    done
+
+    log.info ""
+    log.info "For help on a specific command, you can execute: gpt help <command name>"
+else
+    # Ok, we got a valid command.  We can execute what we're supposed to.
+
+    if array_contains_value "${OUR_COMMAND}" "${GPT_VALID_COMMANDS[@]}";
+    then
         load_and_validate_command "${OUR_COMMAND}"
 
         if [[ $? == 0 ]];
         then
-            # Ok, we're not doing help, instead we're doing the actual action.
-            execute_gpt_command "${OUR_COMMAND}" $OUR_ARGUMENTS
+            if [[ ${GPT_FUNCTION_MODE} == "help" ]];
+            then
+                show_help "${OUR_COMMAND}"
+            else
+                # Ok, we're not doing help, instead we're doing the actual action.
+                execute_gpt_command "${OUR_COMMAND}" ${OUR_ARGUMENTS}
+            fi
         else
             log.error "The command ${OUR_COMMAND} cannot be processed."
         fi
+    else
+        log.info "Invalid command: ${OUR_COMMAND}"
     fi
-else
-    log.info "Invalid command: ${OUR_COMMAND}"
 fi
