@@ -33,7 +33,7 @@ GPT_HEADER_LINE="########################## GitPrime Tools START ###############
 GPT_FOOTER_LINE="########################## GitPrime Tools STOP  ##########################"
 
 # Just a placeholder, we'll overwrite it
-INST_GPT_COLOR_ENABLED=""
+INST_GPT_COLOR_ENABLED=0
 
 # A tmp directory to do some work in
 TMP_DIRECTORY=0
@@ -45,7 +45,7 @@ TMP_DIRECTORY=0
 # NOTE:  duplicate it.
 function setup_colors()
 {
-    if [[ -z ${INST_GPT_COLOR_ENABLED} ]];
+    if [[ ${INST_GPT_COLOR_ENABLED} -eq 0 ]];
     then
         # We've never set the GPT_COLOR_ENABLED before.  So we should
         # use our nifty logic to setup some color variables
@@ -155,7 +155,7 @@ function react_to_exit_code()
 
     log_message="$*"
 
-    if [[ ${EXIT_CODE} != 0 ]];
+    if [[ ${EXIT_CODE} -ne 0 ]];
     then
         handle_exit 1000 "$log_message"
     fi
@@ -173,7 +173,7 @@ function handle_exit()
 
     shift
 
-    if [[ ${TMP_DIRECTORY} != 0 ]];
+    if [[ ${TMP_DIRECTORY} -ne 0 ]];
     then
         rm -fr "${TMP_DIRECTORY}"
     fi
@@ -190,7 +190,7 @@ parse_options $@
 
 OPTION_RESULTS=$?
 
-if [[ ${OPTION_RESULTS} == 2 ]];
+if [[ ${OPTION_RESULTS} -eq 2 ]];
 then
     print_help
 
@@ -201,7 +201,7 @@ fi
 
 log "About to install the GitPrime Development tools to ${GPT_HOME}."
 
-if [[ ${GPT_TICKET_URL} != 0 ]];
+if [[ ${GPT_TICKET_URL} -ne 0 ]];
 then
     # TODO: Make sure the URL has a trailing /
     log "Setting the base ticket URL to: ${GPT_TICKET_URL}"
@@ -220,7 +220,7 @@ fi
 # Ok, we need to clone the repo
 GIT_TEST=$(git --help 2>&1)
 
-if [[ $? != 0 ]];
+if [[ $? -ne 0 ]];
 then
     handle_exit 200 "Git does not seem to be present on this system.  Please make sure its installed and in the path."
 fi
@@ -278,7 +278,7 @@ do
     fi
 done
 
-if [[ ${CHOSEN_ENV_FILE} == 0 ]];
+if [[ ${CHOSEN_ENV_FILE} -eq 0 ]];
 then
     # Hmmm we don't see to have any of them.  We're going to check some things.
     CHOSEN_ENV_FILE=${ENV_FILES[0]}
@@ -306,7 +306,7 @@ echo "${GPT_HEADER_LINE}" >> "${CHOSEN_ENV_FILE}"
 echo "export GITPRIME_TOOLS_HOME=\"${GPT_HOME}\"" >> "${CHOSEN_ENV_FILE}"
 
 # Setup the ticket variable if we have it
-if [[ ${GPT_TICKET_URL} != 0 ]];
+if [[ ${GPT_TICKET_URL} -ne 0 ]];
 then
     echo "export GITPRIME_TOOLS_TICKET_URL=\"${GPT_TICKET_URL}\"" >> "${CHOSEN_ENV_FILE}"
 fi

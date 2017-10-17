@@ -6,10 +6,20 @@
 
 # Before we log anything, we need to setup some colors.  We found some neat stuff at:
 # https://unix.stackexchange.com/questions/9957/how-to-check-if-bash-can-print-colors.
+
+# A constant for whether or not we've enabled colors yet
+GPT_COLOR_ENABLED=0
+
+# A constant for valid commands. If it's populated, we don't have to keep scanning
+if [[ ${#GPT_VALID_COMMANDS[@]} -eq 0 ]];
+then
+    declare -a GPT_VALID_COMMANDS
+fi
+
 # This function will setup the colors once if they haven't been already
 function setup_colors()
 {
-    if [[ -z ${GPT_COLOR_ENABLED} ]];
+    if [[ ${GPT_COLOR_ENABLED} -eq 0 ]];
     then
         # We've never set the GPT_COLOR_ENABLED before.  So we should
         # use our nifty logic to setup some color variables
@@ -111,7 +121,7 @@ function react_to_exit_code()
 
     log_message="$*"
 
-    if [[ ${EXIT_CODE} != 0 ]];
+    if [[ ${EXIT_CODE} -ne 0 ]];
     then
         handle_exit 1000 "$log_message"
     fi
@@ -127,7 +137,7 @@ function handle_exit()
 
     if [[ ! -z "$@" ]];
     then
-        if [[ ${EXIT_CODE} == 0 ]];
+        if [[ ${EXIT_CODE} -eq 0 ]];
         then
             log.info "Exiting: $*"
         else
@@ -164,7 +174,7 @@ function validate_gpt_home()
         fi
     done
 
-    if [[ ${VALID_GPT_HOME} == 1 ]];
+    if [[ ${VALID_GPT_HOME} -eq 1 ]];
     then
         return 0
     fi
@@ -198,13 +208,13 @@ function find_gpt_home()
 
             validate_gpt_home "${OUTPUT}"
 
-            if [[ $? == 0 ]];
+            if [[ $? -eq 0 ]];
             then
                 FOUND_HOME="${OUTPUT}"
             fi
         fi
 
-        if [[ ${FOUND_HOME} == 0 ]];
+        if [[ ${FOUND_HOME} -eq 0 ]];
         then
             OUTPUT="${STARTING_POINT}"
 
@@ -222,7 +232,7 @@ function find_gpt_home()
             do
                 validate_gpt_home "${OUTPUT}"
 
-                if [[ $? == 0 ]];
+                if [[ $? -eq 0 ]];
                 then
                     # We found one.  Set it for output and break
                     FOUND_HOME="${OUTPUT}"
@@ -239,10 +249,62 @@ function find_gpt_home()
         FOUND_HOME="${GITPRIME_TOOLS_HOME}"
     fi
 
-    if [[ ${FOUND_HOME} == 0 ]];
+    if [[ ${FOUND_HOME} -eq 0 ]];
     then
         return 1
     fi
 
     echo -n "${FOUND_HOME}"
+}
+
+# Returns 0 if the given array contains the given value, 1 if it does not
+function array_contains_value()
+{
+    local output=1
+
+    local value=$1
+
+    shift
+
+    local array_to_check=("$@")
+
+    for array_val in "${array_to_check[@]}";
+    do
+        if [[ "${array_val}" == "${value}" ]];
+        then
+            output=0
+
+            break
+        fi
+    done
+
+    return ${output}
+}
+
+# This function populates the GPT_VALID_COMMANDS array that can be used
+# by the tools to recognize valid commands
+function populate_valid_command_array()
+{
+    # Ok, we have a pretty good setup going.  Now we need to figure out what commands we support.
+    local COMMAND_DIRECTORY="${GITPRIME_TOOLS_HOME}/bin/commands"
+
+    local VALID_COMMAND_FOUND=0
+
+    if [[ ${#GPT_VALID_COMMANDS[@]} -eq 0 ]];
+    then
+        GPT_VALID_COMMANDS+=("help")
+
+        for tmp_command in "${COMMAND_DIRECTORY}"/*.sh;
+        do
+            local tmp_command_name=$(basename "${tmp_command}")
+
+            # We need to trim off the .sh
+            tmp_command_name=${tmp_command_name:0:${#tmp_command_name}-3}
+
+            if ! array_contains_value "${tmp_command_name}" "${GPT_VALID_COMMANDS[@]}";
+            then
+                GPT_VALID_COMMANDS+=(${tmp_command_name})
+            fi
+        done
+    fi
 }

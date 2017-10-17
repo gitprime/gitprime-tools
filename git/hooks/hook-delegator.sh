@@ -48,7 +48,7 @@ do
         do
             source "${HOOK_FILE}" ${HOOK_ARGUMENTS}
 
-            if [[ $? != 0 ]];
+            if [[ $? -ne 0 ]];
             then
                 log.error "Failed to execute hook at ${HOOK_DIRECTORY}/${HOOK_NAME}"
 

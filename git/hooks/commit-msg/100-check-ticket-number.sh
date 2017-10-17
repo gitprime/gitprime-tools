@@ -42,7 +42,7 @@ COMMIT_MSG_TICKET_NUM=0
 
 FINAL_TICKET_NUM=$(find_ticket_number "${COMMIT_MSG_TICKET_NUM_REGEX}" "${COMMIT_MSG_DATA}")
 
-if [[ $? == 0 ]];
+if [[ $? -eq 0 ]];
 then
 	# We found it in the commit msg, so we're going to record that.
 	COMMIT_MSG_TICKET_NUM=${FINAL_TICKET_NUM}
@@ -50,14 +50,14 @@ else
     # We didn't find it, we'll try again with the branch
     FINAL_TICKET_NUM=$(find_branch_ticket_number)
 
-    if [[ $? != 0 ]];
+    if [[ $? -ne 0 ]];
     then
         # Turns out we didn't find it
         FINAL_TICKET_NUM=0
     fi
 fi
 
-if [[ ${FINAL_TICKET_NUM} == 0 ]];
+if [[ ${FINAL_TICKET_NUM} -eq 0 ]];
 then
 	# Ok, we couldn't find a ticket number at all.  We need to print that out and exit.
 	log.error "Could not find a valid ticket number in the commit message."
@@ -75,7 +75,7 @@ WRITE_NEW_MSG=0
 
 # Ok, we were able to find a ticket number.  Now we just need to alter the commit
 # msg if we can.
-if [[ ${COMMIT_MSG_TICKET_NUM} == 0 ]];
+if [[ ${COMMIT_MSG_TICKET_NUM} -eq 0 ]];
 then
 	# There was no ticket number at the start of the commit.  We're
 	# going to have to add it in.
@@ -110,7 +110,7 @@ else
 
     URL_TEST_RESULT=$?
 
-    if [[ ${URL_TEST_RESULT} != 0 ]];
+    if [[ ${URL_TEST_RESULT} -ne 0 ]];
     then
         COMMIT_MSG_DATA=$(echo -e "${COMMIT_MSG_DATA}\n\n${GITPRIME_TOOLS_TICKET_URL}/${FINAL_TICKET_NUM}")
 
@@ -118,7 +118,7 @@ else
     fi
 fi
 
-if [[ ${WRITE_NEW_MESSAGE} == 1 ]];
+if [[ ${WRITE_NEW_MESSAGE} -eq 1 ]];
 then
     echo "${COMMIT_MSG_DATA}" > "${COMMIT_MSG_FILE}"
 fi

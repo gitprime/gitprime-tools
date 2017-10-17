@@ -14,6 +14,56 @@
 #    gp update-tools
 #    gp install-git-hooks
 
+# A function to load our subcommands and validate them.
+function load_and_validate_command()
+{
+    local output=0
+
+    # An array of functions we require
+    declare -a valid_contract_functions
+
+    valid_contract_functions[0]="show_help"
+    valid_contract_functions[1]="execute_gpt_command"
+
+    local command_name="$1"
+
+    local command_path="${GITPRIME_TOOLS_HOME}/bin/commands/${command_name}.sh"
+
+    source "${command_path}"
+
+    if [[ -f "${command_path}" ]];
+    then
+        # We've sourced it in, now we just need to be 100% sure that we have loaded
+        # something that we can use.
+        for contract_test in "${valid_contract_functions[@]}";
+        do
+            test_output=$(type -t show_help)
+
+            if [[ $? -eq 0 ]];
+            then
+                if [[ ${test_output} != "function" ]];
+                then
+                    # Ok, there is no show_help function, this is invalid.
+                    log.error "Command processor '${command_name}' is invalid.  It does not include the required '${contract_test}' function."
+
+                    output=1
+                fi
+            else
+                log.error "Command processor '${command_name}' is invalid.  It does not include the required '${contract_test}' function."
+
+                output=1
+            fi
+        done
+    else
+        # We technically should never get this far, but just in case.
+        log.error "Command ${command_name} does not exist in the GitPrime Development Tools home directory."
+
+        output=1
+    fi
+
+    return ${output}
+}
+
 # First up, we need to be usre we have a home directory
 if [[ -z "${GITPRIME_TOOLS_HOME}" ]];
 then
@@ -36,11 +86,11 @@ then
         then
             source "${POTENTIAL_GPT_HOME}/library/common.sh"
 
-            if [[ $? == 0 ]];
+            if [[ $? -eq 0 ]];
             then
                 validate_gpt_home "${POTENTIAL_GPT_HOME}"
 
-                if [[ $? == 0 ]];
+                if [[ $? -eq 0 ]];
                 then
                     # Found one!
                     GITPRIME_TOOLS_HOME="${POTENTIAL_GPT_HOME}"
@@ -72,4 +122,38 @@ else
     exit 999
 fi
 
-log.info "GitPrime Development Tools Called with: $@"
+OUR_COMMAND="$1"
+
+shift
+
+OUR_ARGUMENTS=$@
+
+populate_valid_command_array
+
+if array_contains_value "${OUR_COMMAND}" "${GPT_VALID_COMMANDS[@]}";
+then
+    # Ok, we go this far, now we need to do some logic
+    if [[ "${OUR_COMMAND}" == "help" ]];
+    then
+        # We're going to keep the help logic embedded inside this tool.
+        # In the future, we could technically move it out to its own
+        # command in the commands directory.
+        #
+        # To do this, we're going to actually need to load the command
+        # if its valid.  This means basically repeating the logic we just did with
+        # new arguments
+        show_help
+    else
+        load_and_validate_command "${OUR_COMMAND}"
+
+        if [[ $? == 0 ]];
+        then
+            # Ok, we're not doing help, instead we're doing the actual action.
+            execute_gpt_command "${OUR_COMMAND}" $OUR_ARGUMENTS
+        else
+            log.error "The command ${OUR_COMMAND} cannot be processed."
+        fi
+    fi
+else
+    log.info "Invalid command: ${OUR_COMMAND}"
+fi

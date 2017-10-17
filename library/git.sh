@@ -53,7 +53,7 @@ function find_ticket_number()
 
 	TMP_TICKET_NUM=$(echo "${TMP_FIRST_LINE}" | grep -oE "${TMP_REGEX}")
 
-	if [[ $? == 0 ]];
+	if [[ $? -eq 0 ]];
 	then
 		# We found something, we just need to remove the trailing
 		# characters and spaces
@@ -80,19 +80,19 @@ function find_branch_ticket_number()
 
 	BRANCH_NAME=$(git symbolic-ref --short HEAD)
 
-	if [[ $? == 0 ]];
+	if [[ $? -eq 0 ]];
 	then
 		# Ok we got a branch name.  We just have to parse it.
 		TMP_OUTPUT=$(find_ticket_number "${BRANCH_TICKET_NUM_REGEX}" "${BRANCH_NAME}")
 
-		if [[ $? != 0 ]];
+		if [[ $? -ne 0 ]];
 		then
 		    # No go
             TMP_OUTPUT=0
 		fi
 	fi
 
-	if [[ ${TMP_OUTPUT} == 0 ]];
+	if [[ ${TMP_OUTPUT} -eq 0 ]];
 	then
         exit 1
     fi
