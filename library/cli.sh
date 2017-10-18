@@ -12,6 +12,8 @@ source "${GITPRIME_TOOLS_HOME}/library/common.sh"
 
 # We're going to declare a bunch of arrays that we can then use to keep track
 # of the args and our processing of them
+GPT_ARG_PARSER_INDEX=0
+
 declare -a GPT_ARG_PARSER_NAMES
 declare -a GPT_ARG_PARSER_SHORT_NAMES
 declare -a GPT_ARG_PARSER_DESCRIPTIONS
@@ -38,7 +40,7 @@ function add_cli_argument()
 {
     local long_name
     local short_name
-    local type
+    local arg_type
     local required
     local description
 
@@ -69,10 +71,10 @@ function add_cli_argument()
     else
         if [[ "$3" == "${GPT_ARG_TYPE_FLAG}" ]];
         then
-            type=${GPT_ARG_TYPE_FLAG}
+            arg_type=${GPT_ARG_TYPE_FLAG}
         elif [[ "$3" == "${GPT_ARG_TYPE_VALUE}" ]];
         then
-            type=${GPT_ARG_TYPE_VALUE}
+            arg_type=${GPT_ARG_TYPE_VALUE}
         else
             log.error "Invalid type specified for argument ${long_name}.  Must be equal to GPT_ARG_TYPE_FLAG or GPT_ARG_TYPE_VALUE"
 
@@ -103,13 +105,20 @@ function add_cli_argument()
         fi
     fi
 
-    if [[ -z "$5" ]];
+    if [[ ! -z "$5" ]];
     then
         description="$5"
     fi
 
     # Ok, we've validated the data, now we just have to populate our arrays.
 
+    GPT_ARG_PARSER_NAMES[${GPT_ARG_PARSER_INDEX}]="${long_name}"
+    GPT_ARG_PARSER_SHORT_NAMES[${GPT_ARG_PARSER_INDEX}]="${short_name}"
+    GPT_ARG_PARSER_DESCRIPTIONS[${GPT_ARG_PARSER_INDEX}]="${description}"
+    GPT_ARG_PARSER_TYPES[${GPT_ARG_PARSER_INDEX}]=${arg_type}
+    GPT_ARG_PARSER_REQUIREMENTS[${GPT_ARG_PARSER_INDEX}]=${required}
+
+    GPT_ARG_PARSER_INDEX=$((GPT_ARG_PARSER_INDEX + 1))
 }
 
 function clear_cli_arguments()
@@ -119,5 +128,19 @@ function clear_cli_arguments()
 
 function parse_cli_arguments()
 {
-    echo
+    local index=0
+
+    local arg_array=( "$@" )
+
+    while [[ ${index} -lt ${GPT_ARG_PARSER_INDEX} ]];
+    do
+        log.info "Arg ${GPT_ARG_PARSER_NAMES[index]} -- ${GPT_ARG_PARSER_SHORT_NAMES[index]} -- ${GPT_ARG_PARSER_TYPES[index]} -- ${GPT_ARG_PARSER_REQUIREMENTS[index]} -- ${GPT_ARG_PARSER_DESCRIPTIONS[index]}"
+        index=$((index + 1))
+    done
+
+    # OK, what we need to do here is try and parse these out by each arg
+    for arg in "${arg_array[@]}";
+    do
+        log.info "Got arg: ${arg}"
+    done
 }

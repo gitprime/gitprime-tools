@@ -139,9 +139,9 @@ function handle_exit()
     then
         if [[ ${EXIT_CODE} -eq 0 ]];
         then
-            log.info "Exiting: $*"
+            log.info "$*"
         else
-            log.error "Exiting with error: $*"
+            log.error "$*"
         fi
     fi
 

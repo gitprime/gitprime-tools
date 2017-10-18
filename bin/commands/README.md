@@ -10,5 +10,5 @@ following two functions:
 about the given command.
 
 2. **execute_gpt_command()**:  This is where you should perform all your logic.  You will be passed all command
-line arguments.  These can be parsed using the cli-tools include.  This is expected to return a non-zero
+line arguments.  These can be parsed using the cli include.  This is expected to return a non-zero
 exit code if there is a failure in the logic.
