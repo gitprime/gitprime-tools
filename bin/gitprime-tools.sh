@@ -22,8 +22,11 @@ function load_and_validate_command()
     # An array of functions we require
     declare -a valid_contract_functions
 
-    valid_contract_functions[0]="show_help"
-    valid_contract_functions[1]="execute_gpt_command"
+    valid_contract_functions+=( "show_help" )
+    valid_contract_functions+=( "add_arguments" )
+    valid_contract_functions+=( "validate_arguments" )
+    valid_contract_functions+=( "execute_gpt_command" )
+    valid_contract_functions+=( "destroy" )
 
     local command_name="$1"
 
@@ -37,7 +40,7 @@ function load_and_validate_command()
         # something that we can use.
         for contract_test in "${valid_contract_functions[@]}";
         do
-            test_output=$(type -t show_help)
+            test_output=$(type -t "${contract_test}")
 
             if [[ $? -eq 0 ]];
             then
@@ -138,7 +141,14 @@ then
     shift
 fi
 
-OUR_ARGUMENTS=$@
+declare -a OUR_ARGUMENTS
+
+while [[ ! -z $1 ]];
+do
+    OUR_ARGUMENTS+=("$1")
+
+    shift
+done
 
 populate_valid_command_array
 
@@ -174,10 +184,17 @@ else
         then
             if [[ ${GPT_FUNCTION_MODE} == "help" ]];
             then
+                add_arguments
+
                 show_help "${OUR_COMMAND}"
             else
+                # Ask the tool to add appropriate arguments
+                add_arguments
+
+                # Now we need to parse the args.  We'll do this ourselves and let it set the right array.
+
                 # Ok, we're not doing help, instead we're doing the actual action.
-                execute_gpt_command "${OUR_COMMAND}" ${OUR_ARGUMENTS}
+                execute_gpt_command "${OUR_COMMAND}" "${OUR_ARGUMENTS[@]}"
             fi
         else
             log.error "The command ${OUR_COMMAND} cannot be processed."

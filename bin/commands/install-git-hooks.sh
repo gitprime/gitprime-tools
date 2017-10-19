@@ -19,18 +19,25 @@ function show_help()
     log.info "Showing help here..."
 }
 
+function add_arguments()
+{
+    add_cli_argument "help" "h" ${GPT_ARG_TYPE_FLAG} 0 "Shows the help screen"
+    add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 0 "The path to the git repository you want to add hooks to"
+}
+
+function validate_arguments()
+{
+    return 1
+}
 
 # The required execute_gpt_command function
 function execute_gpt_command()
 {
-    local command_name=$1
+    echo "Executing"
+}
 
-    shift
-
-    local arguments=$@
-
-    add_cli_argument "help" "h" ${GPT_ARG_TYPE_FLAG} 0 "Shows the help screen"
-    add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 0 "The path to the git repository you want to add hooks to"
-
-    parse_cli_arguments ${arguments}
+function destroy()
+{
+    # Nothing really to do here.
+    test 1
 }

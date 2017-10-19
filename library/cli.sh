@@ -135,12 +135,13 @@ function parse_cli_arguments()
     while [[ ${index} -lt ${GPT_ARG_PARSER_INDEX} ]];
     do
         log.info "Arg ${GPT_ARG_PARSER_NAMES[index]} -- ${GPT_ARG_PARSER_SHORT_NAMES[index]} -- ${GPT_ARG_PARSER_TYPES[index]} -- ${GPT_ARG_PARSER_REQUIREMENTS[index]} -- ${GPT_ARG_PARSER_DESCRIPTIONS[index]}"
+
         index=$((index + 1))
     done
 
     # OK, what we need to do here is try and parse these out by each arg
-    for arg in "${arg_array[@]}";
+    for ((i = 0; i < ${#arg_array[@]}; i++))
     do
-        log.info "Got arg: ${arg}"
+        log.info "Parsing Arg: ${arg_array[$i]}"
     done
 }
