@@ -25,11 +25,6 @@ function add_arguments()
     add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 0 "The path to the git repository you want to add hooks to"
 }
 
-function validate_arguments()
-{
-    return 1
-}
-
 # The required execute_gpt_command function
 function execute_gpt_command()
 {

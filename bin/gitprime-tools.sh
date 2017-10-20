@@ -24,7 +24,6 @@ function load_and_validate_command()
 
     valid_contract_functions+=( "show_help" )
     valid_contract_functions+=( "add_arguments" )
-    valid_contract_functions+=( "validate_arguments" )
     valid_contract_functions+=( "execute_gpt_command" )
     valid_contract_functions+=( "destroy" )
 
@@ -191,10 +190,14 @@ else
                 # Ask the tool to add appropriate arguments
                 add_arguments
 
-                # Now we need to parse the args.  We'll do this ourselves and let it set the right array.
+                if [[ ${#OUR_ARGUMENTS[@]} -gt 0 ]];
+                then
+                    # We need to parse the arguments.  That means its up to us.
+                    parse_cli_arguments "${OUR_ARGUMENTS[@]}"
+                fi
 
                 # Ok, we're not doing help, instead we're doing the actual action.
-                execute_gpt_command "${OUR_COMMAND}" "${OUR_ARGUMENTS[@]}"
+                execute_gpt_command
             fi
         else
             log.error "The command ${OUR_COMMAND} cannot be processed."

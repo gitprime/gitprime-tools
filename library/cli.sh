@@ -132,16 +132,51 @@ function parse_cli_arguments()
 
     local arg_array=( "$@" )
 
-    while [[ ${index} -lt ${GPT_ARG_PARSER_INDEX} ]];
-    do
-        log.info "Arg ${GPT_ARG_PARSER_NAMES[index]} -- ${GPT_ARG_PARSER_SHORT_NAMES[index]} -- ${GPT_ARG_PARSER_TYPES[index]} -- ${GPT_ARG_PARSER_REQUIREMENTS[index]} -- ${GPT_ARG_PARSER_DESCRIPTIONS[index]}"
-
-        index=$((index + 1))
-    done
+    declare -a final_args
 
     # OK, what we need to do here is try and parse these out by each arg
-    for ((i = 0; i < ${#arg_array[@]}; i++))
+    # We get them in a pretty good format.  However, we don't deal well with
+    # "clumped" arguments like -awbc should be 4 short arguments.  if there
+    # is no dash, then we assume this is some sort of value that is passed in.
+
+    # First thing we're going to do is look for "short" options and de-clump them
+    for ((x = 0; x < ${#arg_array[@]}; x++));
     do
-        log.info "Parsing Arg: ${arg_array[$i]}"
+        if [[ "${arg_array[x]}" == "-"* ]] && [[ ${arg_array[x]} != "--"* ]];
+        then
+            # Ok, this is a possible clumped set.  What we need to do here is simply
+            # expand per character.
+            local tmp_str=${arg_array[x]:1}
+
+            for (( y = 0; y < ${#tmp_str}; y++ ));
+            do
+                local our_char=${tmp_str:$y:1}
+
+                if [[ ${our_char} == "=" ]];
+                then
+                    # We need to use the REST of this string
+                    if [[ ${y} -gt 0 ]];
+                    then
+                        final_args[-1]="${final_args[-1]}${tmp_str:$y}"
+
+                        break
+                    else
+                        # This is a weird case, it means they did "-=" as an arg.  We're going
+                        # to take it as a single character arg and then let it fail later as
+                        # an unacceptable value.
+                        final_args+=( "-${our_char}" )
+                    fi
+                else
+                    final_args+=( "-${our_char}" )
+                fi
+            done
+        else
+            final_args+=( "${arg_array[x]}" )
+        fi
+    done
+
+    for ((i = 0; i < ${#final_args[@]}; i++));
+    do
+        log.info "Final Arg: ${final_args[i]}"
     done
 }
