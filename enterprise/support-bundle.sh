@@ -33,8 +33,8 @@ echo "Extracting docker logs for all containers"
 # Use those container names to get the docker logs.  This will give us the
 # any logging from the entry points.
 while read -r CONTAINER_NAME; do
- docker logs ${CONTAINER_NAME} >> "${DOCKER_LOG_DIR}/${CONTAINER_NAME}.log" 2>&1
-done <<< "${REPLICATED_CONTAINER_LIST}"
+  docker logs ${CONTAINER_NAME} >>"${DOCKER_LOG_DIR}/${CONTAINER_NAME}.log" 2>&1
+done <<<"${REPLICATED_CONTAINER_LIST}"
 
 # Get the list of currently running containers.  We're going to use these to try and grab
 # the GitPrime Enterprise application logs.  We can only do that for the web, scheduler, and worker
@@ -44,19 +44,17 @@ GITPRIME_CONTAINER_LIST=$(docker ps --format="{{.Names}}" | grep -P "replicated_
 echo "Extracting GitPrime Enterprise logs"
 
 # Loop through and get anything in /var/log/gitprime
-while read -r CONTAINER_NAME;
-do
- mkdir -p "${GITPRIME_LOG_DIR}/${CONTAINER_NAME}"
+while read -r CONTAINER_NAME; do
+  mkdir -p "${GITPRIME_LOG_DIR}/${CONTAINER_NAME}"
 
- # We need a list of log files
- LOG_FILE_NAMES=$(docker exec "${CONTAINER_NAME}" ls /var/log/gitprime/)
+  # We need a list of log files
+  LOG_FILE_NAMES=$(docker exec "${CONTAINER_NAME}" ls /var/log/gitprime/)
 
- while read -r LOG_FILE_NAME;
- do
+  while read -r LOG_FILE_NAME; do
     docker cp "${CONTAINER_NAME}:/var/log/gitprime/${LOG_FILE_NAME}" "${GITPRIME_LOG_DIR}/${CONTAINER_NAME}/${LOG_FILE_NAME}"
- done <<< "${LOG_FILE_NAMES}"
+  done <<<"${LOG_FILE_NAMES}"
 
-done <<< "${GITPRIME_CONTAINER_LIST}"
+done <<<"${GITPRIME_CONTAINER_LIST}"
 
 echo "Creating support bundle..."
 
