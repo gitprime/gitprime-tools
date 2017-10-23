@@ -124,6 +124,21 @@ function reset_cli() {
   GPT_ARG_PARSER_ERRORS=()
 }
 
+# A function to create a spacer string for a given column width
+function create_spacer() {
+  local text_width=$1
+
+  local column_width=$2
+
+  local output=""
+
+  for ((s = 0; s < (column_width - text_width); s++)); do
+    output+=" "
+  done
+
+  echo "${output}"
+}
+
 # This function logs out the argument information in a help-style format.
 # I'll freely admit that this is a horrible, terrible piece of code.  On
 # linux, bash offers a lot of stuff I could do this easier with.  However,
@@ -140,8 +155,7 @@ function show_argument_info() {
 
   term_width=$(tput cols)
 
-  for ((x = 0; x < ${#GPT_ARG_PARSER_NAMES[@]}; x++));
-  do
+  for ((x = 0; x < ${#GPT_ARG_PARSER_NAMES[@]}; x++)); do
     local long_name
     local description
     local arg_type
@@ -166,34 +180,27 @@ function show_argument_info() {
   # The last column will be the term-width minus the length of all text before it.
   # That text is the log header, the col_one_width, the col_two_width and 12 chars
   # of spacing in between
-  local description_ident=$((11 + col_one_width + 4 + col_two_width + 4))
+  local description_ident=$((col_one_width + 4 + col_two_width + 4))
   col_three_width=$((term_width - description_ident))
 
-  local col_one_spacer=""
-
-  for ((s = 0; s < (col_one_width - 6); s++)); do
-    col_one_spacer+=" "
-  done
+  local col_one_spacer
+  col_one_spacer=$(create_spacer 6 ${col_one_width})
 
   # We can do spacers for the second and third, fourth, fifth, etc
   # here because we only ever have one size
-  line_two_spacer=""
-  for ((s=0; s < (description_ident - 14); s++)); do
-    line_two_spacer+=" "
-  done
+  local line_two_spacer=""
+  line_two_spacer=$(create_spacer 3 ${description_ident})
 
-  line_three_spacer=""
-  for ((s=0; s < (description_ident - 11); s++)); do
-    line_three_spacer+=" "
-  done
+  local line_three_spacer=""
+  line_three_spacer=$(create_spacer 0 ${description_ident})
 
+  # Log out a header
   # shellcheck disable=SC2154
   log.info "${bold}Option${col_one_spacer}    Required    Description${normal}"
 
   local desc_array
 
-  for ((x = 0; x < ${#GPT_ARG_PARSER_NAMES[@]}; x++));
-  do
+  for ((x = 0; x < ${#GPT_ARG_PARSER_NAMES[@]}; x++)); do
     log.info
     local long_name
     local short_name
@@ -238,11 +245,7 @@ function show_argument_info() {
     fi
 
     col_one_spacer=""
-    if [[ ${long_name_width} -lt ${col_one_width} ]]; then
-      for ((s = 0; s < (col_one_width - long_name_width); s++)); do
-        col_one_spacer+=" "
-      done
-    fi
+    col_one_spacer=$(create_spacer ${long_name_width} ${col_one_width})
 
     # Logout the main line
     if [[ ${arg_type} -eq ${GPT_ARG_TYPE_VALUE} ]]; then
