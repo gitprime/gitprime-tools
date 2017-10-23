@@ -17,7 +17,13 @@ source "${GITPRIME_TOOLS_HOME}/library/cli.sh"
 
 # The required show_help function
 function show_help() {
-  log.info "Showing help here..."
+  log.info "The install-git-hooks command will install a set of hooks into the"
+  log.info "git repository specified.  If none is specified, it assumes that"
+  log.info "the current directory is a git repository."
+
+  log.info
+
+  show_argument_info
 }
 
 function add_arguments() {

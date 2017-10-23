@@ -112,8 +112,153 @@ function add_cli_argument() {
   GPT_ARG_PARSER_INDEX=$((GPT_ARG_PARSER_INDEX + 1))
 }
 
-function clear_cli_arguments() {
-  echo
+# This function is intended to simply clear out all the previously parsed
+# arguments so that we can use it again.
+function reset_cli() {
+  GPT_ARG_PARSER_NAMES=()
+  GPT_ARG_PARSER_SHORT_NAMES=()
+  GPT_ARG_PARSER_DESCRIPTIONS=()
+  GPT_ARG_PARSER_TYPES=()
+  GPT_ARG_PARSER_REQUIREMENTS=()
+  GPT_ARG_PARSER_RESULTS=()
+  GPT_ARG_PARSER_ERRORS=()
+}
+
+# This function logs out the argument information in a help-style format.
+# I'll freely admit that this is a horrible, terrible piece of code.  On
+# linux, bash offers a lot of stuff I could do this easier with.  However,
+# Mac is several versions behind on bash, and then also doesn't have a posix
+# compliant awk, sed, or grep.
+#
+# So I've hacked it.  I build a really ugly little columnizer.
+function show_argument_info() {
+  local col_one_width=6
+  local col_two_width=8
+  local col_three_width=0
+
+  local term_width=0
+
+  term_width=$(tput cols)
+
+  for ((x = 0; x < ${#GPT_ARG_PARSER_NAMES[@]}; x++));
+  do
+    local long_name
+    local description
+    local arg_type
+
+    long_name="${GPT_ARG_PARSER_NAMES[x]}"
+    description="${GPT_ARG_PARSER_DESCRIPTIONS[x]}"
+    arg_type="${GPT_ARG_PARSER_TYPES[x]}"
+
+    local tmp_col_one_width=${#long_name}
+
+    if [[ ${arg_type} -eq ${GPT_ARG_TYPE_VALUE} ]]; then
+      tmp_col_one_width=$((tmp_col_one_width + 10))
+    else
+      tmp_col_one_width=$((tmp_col_one_width + 2))
+    fi
+
+    if [[ ${tmp_col_one_width} -gt ${col_one_width} ]]; then
+      col_one_width=${tmp_col_one_width}
+    fi
+  done
+
+  # The last column will be the term-width minus the length of all text before it.
+  # That text is the log header, the col_one_width, the col_two_width and 12 chars
+  # of spacing in between
+  local description_ident=$((11 + col_one_width + 4 + col_two_width + 4))
+  col_three_width=$((term_width - description_ident))
+
+  local col_one_spacer=""
+
+  for ((s = 0; s < (col_one_width - 6); s++)); do
+    col_one_spacer+=" "
+  done
+
+  # We can do spacers for the second and third, fourth, fifth, etc
+  # here because we only ever have one size
+  line_two_spacer=""
+  for ((s=0; s < (description_ident - 14); s++)); do
+    line_two_spacer+=" "
+  done
+
+  line_three_spacer=""
+  for ((s=0; s < (description_ident - 11); s++)); do
+    line_three_spacer+=" "
+  done
+
+  # shellcheck disable=SC2154
+  log.info "${bold}Option${col_one_spacer}    Required    Description${normal}"
+
+  local desc_array
+
+  for ((x = 0; x < ${#GPT_ARG_PARSER_NAMES[@]}; x++));
+  do
+    log.info
+    local long_name
+    local short_name
+    local description
+    local arg_type
+    local requirement
+
+    long_name="${GPT_ARG_PARSER_NAMES[x]}"
+    short_name="${GPT_ARG_PARSER_SHORT_NAMES[x]}"
+    description="${GPT_ARG_PARSER_DESCRIPTIONS[x]}"
+    arg_type="${GPT_ARG_PARSER_TYPES[x]}"
+    requirement="${GPT_ARG_PARSER_REQUIREMENTS[x]}"
+
+    if [[ ${requirement} -eq 1 ]]; then
+      requirement "yes"
+    else
+      # the trailing space is intentional
+      requirement="no "
+    fi
+
+    desc_array=()
+
+    if [[ ${#description} -gt ${col_three_width} ]]; then
+      # We need to turn the description into properly wrapped lines
+      # that fit in their column
+      description=$(echo "${description}" | fold -s -w ${col_three_width})
+
+      while read -r desc_line; do
+        desc_array+=("${desc_line}")
+      done <<<"${description}"
+    else
+      desc_array[0]="${description}"
+    fi
+
+    # Build a spacer for the first column
+    local long_name_width=${#long_name}
+
+    if [[ ${arg_type} -eq ${GPT_ARG_TYPE_VALUE} ]]; then
+      long_name_width=$((long_name_width + 10))
+    else
+      long_name_width=$((long_name_width + 2))
+    fi
+
+    col_one_spacer=""
+    if [[ ${long_name_width} -lt ${col_one_width} ]]; then
+      for ((s = 0; s < (col_one_width - long_name_width); s++)); do
+        col_one_spacer+=" "
+      done
+    fi
+
+    # Logout the main line
+    if [[ ${arg_type} -eq ${GPT_ARG_TYPE_VALUE} ]]; then
+      log.info "--${long_name}=<value>${col_one_spacer}    ${requirement}         ${desc_array[0]}"
+    else
+      log.info "--${long_name}${col_one_spacer}    ${requirement}         ${desc_array[0]}"
+    fi
+
+    # Log the short name
+    log.info " -${short_name}${line_two_spacer}${desc_array[1]}"
+
+    # Log any further description stuff
+    for ((y = 2; y < ${#desc_array[@]}; y++)); do
+      log.info "${line_three_spacer}${desc_array[y]}"
+    done
+  done
 }
 
 function parse_cli_arguments() {
