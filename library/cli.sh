@@ -156,8 +156,4 @@ function parse_cli_arguments() {
       final_args+=("${arg_array[x]}")
     fi
   done
-
-  for ((i = 0; i < ${#final_args[@]}; i++)); do
-    log.info "Final Arg: ${final_args[i]}"
-  done
 }

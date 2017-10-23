@@ -54,6 +54,7 @@ function setup_colors() {
       if test -n "${COLOR_TEST}" && test ${COLOR_TEST} -ge 8; then
         bold="$(tput bold)"
         normal="$(tput sgr0)"
+        red="$(tput setaf 1)"
       fi
     fi
 
@@ -73,6 +74,16 @@ function log() {
   local MESSAGE="$*"
 
   local HEADER="${bold}[GP-TOOLS]${normal}"
+
+  echo -e "${HEADER} ${MESSAGE}"
+}
+
+function log.important() {
+  setup_colors
+
+  local MESSAGE="$*"
+
+  local HEADER="${red}[GP-TOOLS]${normal}"
 
   echo -e "${HEADER} ${MESSAGE}"
 }
@@ -162,12 +173,12 @@ function handle_exit() {
 
   shift
 
-  if [[ ${TMP_DIRECTORY} -ne 0 ]]; then
+  if [[ "${TMP_DIRECTORY}" != "0" ]]; then
     rm -fr "${TMP_DIRECTORY}"
   fi
 
   if [[ ! -z "$*" ]]; then
-    log "Exiting: $*"
+    log.important "Exiting: $*"
   fi
 
   exit "${EXIT_CODE}"
@@ -233,11 +244,6 @@ export GITPRIME_TOOLS_HOME="${GPT_HOME}"
 
 export GITPRIME_TOOLS_TICKET_URL="${GPT_TICKET_URL}"
 
-# Ok, now that we've successfully done that, we can actually start using the tools
-# that are built into our toolset. We can now load stuff we need
-# shellcheck source=../library/common.sh
-source "${GITPRIME_TOOLS_HOME}/library/common.sh"
-
 # Our next major step is that we need to add something into the .bashrc or .profile of our
 # user so that they have access to the environment and some other stuff.  We need
 # to pick which one we want.  I believe we prefer .bashrc
@@ -271,7 +277,7 @@ if [[ -f "${CHOSEN_ENV_FILE}" ]]; then
   cp "${CHOSEN_ENV_FILE}" "${CHOSEN_ENV_FILE}.${TMP_DATE}.bak"
 fi
 
-log.info "Configuring GitPrime Development Tools to load from ${CHOSEN_ENV_FILE}"
+log "Configuring GitPrime Development Tools to load from ${CHOSEN_ENV_FILE}"
 
 # First thing, we remove any old settings
 sed -i "/${GPT_HEADER_LINE}/,/${GPT_FOOTER_LINE}/d" "${CHOSEN_ENV_FILE}"
@@ -293,10 +299,10 @@ echo "source ${GPT_HOME}/library/aliases.sh" >>"${CHOSEN_ENV_FILE}"
 # Close it out with the footer
 echo "${GPT_FOOTER_LINE}" >>"${CHOSEN_ENV_FILE}"
 
-log.info "Installation completed."
-
-log.warn "The tools have been successfully installed.  However, you will not be able to"
-log.warn "use them until you have reloaded your shell environment.  It is suggested that"
-log.warn "you logout and log back in."
+log "Installation completed."
+log ""
+log.important "The tools have been successfully installed.  However, you will not be able to"
+log.important "use them until you have reloaded your shell environment.  It is suggested that"
+log.important "you logout and log back in."
 
 handle_exit 0
