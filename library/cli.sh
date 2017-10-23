@@ -117,8 +117,6 @@ function clear_cli_arguments() {
 }
 
 function parse_cli_arguments() {
-  local index=0
-
   local arg_array=("$@")
 
   declare -a final_args

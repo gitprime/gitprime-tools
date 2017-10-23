@@ -200,7 +200,7 @@ if [[ ! -w "${TMP_BASE_DIR}" ]]; then
 fi
 
 # Ok, we need to clone the repo but we need to test for git before we try to clone
-git --help 2>&1
+git --help > /dev/null 2>&1
 
 if [[ $? -ne 0 ]]; then
   handle_exit 200 "Git does not seem to be present on this system.  Please make sure its installed and in the path."
@@ -257,7 +257,7 @@ for TEST_ENV_FILE in "${ENV_FILES[@]}"; do
   fi
 done
 
-if [[ ${CHOSEN_ENV_FILE} -eq 0 ]]; then
+if [[ "${CHOSEN_ENV_FILE}" == "0" ]]; then
   # Hmmm we don't see to have any of them.  We're going to check some things.
   CHOSEN_ENV_FILE=${ENV_FILES[0]}
 
