@@ -12,10 +12,12 @@ BRANCH_TICKET_NUM_REGEX="^([a-zA-Z]{2,8}-[0-9]+)\/"
 
 # Regex pattern for finding a ticket number at the start of a
 # commit message
+# shellcheck disable=SC2034
 COMMIT_MSG_TICKET_NUM_REGEX="(^|\s)([a-zA-Z]{2,8}-[0-9]+)(:|\s|$)"
 
 # Regex pattern for finding the ticket URL at the end of the
 # commit message.
+# shellcheck disable=SC2034
 TICKET_URL_REGEX="^http[s]*:\/\/(.*?)\/([a-zA-Z]{2,8}-[0-9]+)$"
 
 # This function retrieves a ticket number from the given content
@@ -27,75 +29,69 @@ TICKET_URL_REGEX="^http[s]*:\/\/(.*?)\/([a-zA-Z]{2,8}-[0-9]+)$"
 #
 # Echo's the ticket number if one is found
 # Returns 1 if none is found.
-function find_ticket_number()
-{
-	local TMP_REGEX="$1"
+function find_ticket_number() {
+  local TMP_REGEX="$1"
 
-	local TMP_CONTENT="$2"
+  local TMP_CONTENT="$2"
 
-	# We first need to find the first line of the txt that isn't a comment
-	local TMP_FIRST_LINE=0
+  # We first need to find the first line of the txt that isn't a comment
+  local TMP_FIRST_LINE=0
 
-	while read -r TMP_LINE
-	do
-		local TMP_LINE_TEST=$(echo -e "${TMP_LINE}" | tr -d '[:space:]')
+  while read -r TMP_LINE; do
+    local TMP_LINE_TEST
 
-		if [[ "${TMP_LINE_TEST:0:1}" != "#" ]];
-		then
-			TMP_FIRST_LINE="${TMP_LINE}"
+		TMP_LINE_TEST=$(echo -e "${TMP_LINE}" | tr -d '[:space:]')
 
-			break
-		fi
-	done <<< "${TMP_CONTENT}"
+    if [[ "${TMP_LINE_TEST:0:1}" != "#" ]]; then
+      TMP_FIRST_LINE="${TMP_LINE}"
 
-    # Define the local variable before we execute.  Otherwise we get weird return codes
-	local TMP_TICKET_NUM
+      break
+    fi
+  done <<<"${TMP_CONTENT}"
 
-	TMP_TICKET_NUM=$(echo "${TMP_FIRST_LINE}" | grep -oE "${TMP_REGEX}")
+  # Define the local variable before we execute.  Otherwise we get weird return codes
+  local TMP_TICKET_NUM
 
-	if [[ $? == 0 ]];
-	then
-		# We found something, we just need to remove the trailing
-		# characters and spaces
-		TMP_TICKET_NUM=${TMP_TICKET_NUM%/}
-		TMP_TICKET_NUM=${TMP_TICKET_NUM%:}
+  TMP_TICKET_NUM=$(echo "${TMP_FIRST_LINE}" | grep -oE "${TMP_REGEX}")
 
-		TMP_TICKET_NUM=$(echo -e "${TMP_TICKET_NUM}" | tr -d '[:space:]')
+  if [[ $? -eq 0 ]]; then
+    # We found something, we just need to remove the trailing
+    # characters and spaces
+    TMP_TICKET_NUM=${TMP_TICKET_NUM%/}
+    TMP_TICKET_NUM=${TMP_TICKET_NUM%:}
 
-		echo -n "${TMP_TICKET_NUM}"
+    TMP_TICKET_NUM=$(echo -e "${TMP_TICKET_NUM}" | tr -d '[:space:]')
 
-		return 0
-	else
-	    return 1
-	fi
+    echo -n "${TMP_TICKET_NUM}"
+
+    return 0
+  else
+    return 1
+  fi
 }
 
 # Attempts to find a ticket number from the branch name.
 #
-function find_branch_ticket_number()
-{
-    local TMP_OUTPUT=0
+function find_branch_ticket_number() {
+  local TMP_OUTPUT=0
 
-	local BRANCH_NAME
+  local BRANCH_NAME
 
-	BRANCH_NAME=$(git symbolic-ref --short HEAD)
+  BRANCH_NAME=$(git symbolic-ref --short HEAD)
 
-	if [[ $? == 0 ]];
-	then
-		# Ok we got a branch name.  We just have to parse it.
-		TMP_OUTPUT=$(find_ticket_number "${BRANCH_TICKET_NUM_REGEX}" "${BRANCH_NAME}")
+  if [[ $? -eq 0 ]]; then
+    # Ok we got a branch name.  We just have to parse it.
+    TMP_OUTPUT=$(find_ticket_number "${BRANCH_TICKET_NUM_REGEX}" "${BRANCH_NAME}")
 
-		if [[ $? != 0 ]];
-		then
-		    # No go
-            TMP_OUTPUT=0
-		fi
-	fi
-
-	if [[ ${TMP_OUTPUT} == 0 ]];
-	then
-        exit 1
+    if [[ $? -ne 0 ]]; then
+      # No go
+      TMP_OUTPUT=0
     fi
+  fi
 
-    echo -n "${TMP_OUTPUT}"
+  if [[ ${TMP_OUTPUT} -eq 0 ]]; then
+    exit 1
+  fi
+
+  echo -n "${TMP_OUTPUT}"
 }
