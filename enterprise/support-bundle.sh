@@ -39,7 +39,7 @@ done <<<"${REPLICATED_CONTAINER_LIST}"
 # Get the list of currently running containers.  We're going to use these to try and grab
 # the GitPrime Enterprise application logs.  We can only do that for the web, scheduler, and worker
 # containers
-GITPRIME_CONTAINER_LIST=$(docker ps --format="{{.Names}}" | grep -P "replicated_[0-9a-f]{32}_(web|scheduler|worker)\..*")
+GITPRIME_CONTAINER_LIST=$(docker ps --format="{{.Names}}" | grep -P "replicated_[0-9a-f]{32}_(gpe_)?(web|scheduler|worker)\..*")
 
 echo "Extracting GitPrime Enterprise logs"
 
