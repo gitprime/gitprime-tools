@@ -264,6 +264,10 @@ function show_argument_info() {
   done
 }
 
+# This function parses the arguments and their values and stores them so that
+# users can get the values appropriately.
+#
+# returns 0 if successful, 1 if there are errors.
 function parse_cli_arguments() {
   local arg_array=("$@")
 
@@ -304,4 +308,60 @@ function parse_cli_arguments() {
       final_args+=("${arg_array[x]}")
     fi
   done
+}
+
+function get_argument_names() {
+  echo "${GPT_ARG_PARSER_NAMES[@]}"
+}
+
+function find_argument_index() {
+  local arg_name=$1
+
+  local output=-1
+
+  for ((x = 0; x < ${#GPT_ARG_PARSER_NAMES[@]}; x++)); do
+    if [[ "${arg_name}" == "${GPT_ARG_PARSER_NAMES[x]}" ]]; then
+      output=${x}
+
+      break
+    fi
+  done
+
+  echo ${output}
+}
+
+# Gets a parsed argument value.  Will echo the value of the given argument.
+# Returns 1 if the argument does not exist as well as echos an empty string.
+function get_argument_value() {
+  local arg_name=$1
+
+  local output=1
+
+  local arg_index
+  arg_index=$(find_argument_index "${arg_name}")
+
+  if [[ ${arg_index} -gt -1 ]]; then
+    echo "${GPT_ARG_PARSER_RESULTS[arg_index]}"
+
+    output=0
+  fi
+
+  return ${output}
+}
+
+function get_argument_error() {
+  local arg_name=$1
+
+  local output=1
+
+  local arg_index
+  arg_index=$(find_argument_index "${arg_name}")
+
+  if [[ ${arg_index} -gt -1 ]]; then
+    echo "${GPT_ARG_PARSER_ERRORS[arg_index]}"
+
+    output=0
+  fi
+
+  return ${output}
 }
