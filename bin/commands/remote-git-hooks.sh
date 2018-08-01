@@ -30,8 +30,8 @@ HOOK_NAMES[9]="pre-rebase"
 
 # The required show_help function
 function show_help() {
-  log.info "The install-git-hooks command will install a set of hooks into the"
-  log.info "git repository specified.  If none is specified, it assumes that"
+  log.info "The remove-git-hooks command will remove the GitPrime Tool Hooks From"
+  log.info "the git repository specified.  If none is specified, it assumes that"
   log.info "the current directory is a git repository."
 
   log.info
@@ -41,24 +41,24 @@ function show_help() {
 
 function add_arguments() {
   add_cli_argument "help" "h" ${GPT_ARG_TYPE_FLAG} 0 "Shows the help screen"
-  add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 1 "The path to the git repository you want to add hooks to"
+  add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 0 "The path to the repository you want to remove hooks from"
 }
 
 # The required execute_gpt_command function
 function execute_gpt_command() {
     REPO_PATH=$(get_argument_value "repo-path")
 
-    log "Initial repo path: ${REPO_PATH}"
+    log "Initial repo path"
 
     if [[ -z $REPO_PATH ]];
     then
         REPO_PATH=$(pwd)
     fi
 
-    log "Beginning installation of GitPrime hooks system into repository located at ${REPO_PATH}"
+    log "Beginning removal of GitPrime hooks system from repository located at ${REPO_PATH}"
 }
 
 function destroy() {
   # Nothing really to do here.
-  log "Completed Installation of Git Hooks"
+  log "Completed Removal of Git Hooks"
 }

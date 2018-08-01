@@ -22,6 +22,7 @@ declare -a GPT_ARG_PARSER_TYPES
 declare -a GPT_ARG_PARSER_REQUIREMENTS
 declare -a GPT_ARG_PARSER_RESULTS
 declare -a GPT_ARG_PARSER_ERRORS
+declare -a GPT_ARG_PARSER_COMMANDS
 
 GPT_ARG_TYPE_FLAG=0
 GPT_ARG_TYPE_VALUE=1
@@ -35,7 +36,7 @@ GPT_ARG_TYPE_VALUE=1
 #         is true/false or 1 for a 'value' which is an argument that has a value
 #         follows it.  These are represented by the constants GPT_ARG_TYPE_FLAG
 #         and GPT_ARG_TYPE_VALUE
-#   required:  0 if the argument isn't requred, 1 if it is
+#   required:  0 if the argument isn't required, 1 if it is
 #   description:  A help description of the argument.
 function add_cli_argument() {
   local long_name
@@ -122,6 +123,7 @@ function reset_cli() {
   GPT_ARG_PARSER_REQUIREMENTS=()
   GPT_ARG_PARSER_RESULTS=()
   GPT_ARG_PARSER_ERRORS=()
+  GPT_ARG_PARSER_COMMANDS=()
 }
 
 # A function to create a spacer string for a given column width
@@ -264,6 +266,82 @@ function show_argument_info() {
   done
 }
 
+# This function takes a parsed CLI arg and pops it into the right arrays, sets errors, etc.
+function handle_cli_argument() {
+  local arg_data=$1
+
+  local arg_index=-1
+
+  local arg_key=-1
+  local arg_value=-1
+
+  if [[ "${arg_key}" == "-"* ]]; then
+    # First, we strip the leading -
+    while [[ "${arg_data}" == "-"* ]];
+    do
+      arg_data=${arg_data:1}
+    done
+  else
+    # For options passed without a flag, we really just want to keep an ordered array of those so the
+    # given command can just handle them.
+    GPT_ARG_PARSER_COMMANDS+=(arg_data)
+
+    # We can just return, there is no validation to do here.
+    return 0
+  fi
+
+  if [[ ${arg_data} == "="* ]]; then
+    # Hacking for the person that uses an = as an arg flag
+    arg_data="GPT_EQUAL_SIGN_ARG${arg_data:1}"
+  fi
+
+  IFS='=' read -ra arg_split <<< "$arg_data"
+
+  arg_key=${arg_split[0]}
+
+  if [[ ${#arg_split[@]} > 1 ]]; then
+    arg_value=${arg_split[1]}
+  fi
+
+  if [[ "${arg_key}" == "GPT_EQUAL_SIGN_ARG" ]]; then
+    # Hacking for the person that uses an = as an arg flag
+    arg_key="="
+  fi
+
+  if [[ ${#arg_key} == 1 ]]; then
+    arg_index=$(find_short_argument_index "${arg_key}")
+  else
+    arg_index=$(find_argument_index "${arg_key}")
+  fi
+
+  if [[ ${arg_index} == -1 ]]; then
+    GPT_ARG_PARSER_ERRORS+=("Invalid argument: ${arg_key}")
+  else
+    # Ok, we have a valid argument, we just need to validate it
+    local arg_type=${GPT_ARG_PARSER_TYPES[arg_index]}
+
+    local valid=0
+
+    if [[ ${arg_type} == ${GPT_ARG_TYPE_VALUE} ]]; then
+      # We need to validate we got a value, otherwise we didn't.
+      if [[ ${arg_value} == -1 ]] || [[ -z "${arg_value}" ]]; then
+        GPT_ARG_PARSER_ERRORS+=("Argument ${arg_key} requires a value.")
+      else
+        valid=1
+      fi
+    else
+      # This is just a flag, so we set the value to 1 to show it was on
+      arg_value=1
+
+      valid=1
+    fi
+
+    if [[ ${valid} == 1 ]]; then
+      GPT_ARG_PARSER_RESULTS[arg_index]=${arg_value}
+    fi
+  fi
+}
+
 # This function parses the arguments and their values and stores them so that
 # users can get the values appropriately.
 #
@@ -307,6 +385,21 @@ function parse_cli_arguments() {
     else
       final_args+=("${arg_array[x]}")
     fi
+
+    handle_cli_argument "${final_args[-1]}"
+  done
+
+  local arg_index=-1
+  local arg_long_name=-1
+
+  for arg_long_name in ${GPT_ARG_PARSER_NAMES[@]}; do
+    arg_index=$(find_argument_index "${arg_long_name}")
+
+    if [[ ${GPT_ARG_PARSER_REQUIREMENTS[arg_index]} == 1 ]]; then
+      if [[ ${GPT_ARG_PARSER_RESULTS[arg_index]} == -1 ]] || [[ -z "${GPT_ARG_PARSER_RESULTS[arg_index]}" ]]; then
+        GPT_ARG_PARSER_ERRORS+=("Argument ${arg_long_name} is required.")
+      fi
+    fi
   done
 }
 
@@ -330,6 +423,22 @@ function find_argument_index() {
   echo ${output}
 }
 
+function find_short_argument_index() {
+  local arg_name=$1
+
+  local output=-1
+
+  for ((x = 0; x < ${#GPT_ARG_PARSER_SHORT_NAMES[@]}; x++)); do
+    if [[ "${arg_name}" == "${GPT_ARG_PARSER_SHORT_NAMES[x]}" ]]; then
+      output=${x}
+
+      break
+    fi
+  done
+
+  echo ${output}
+}
+
 # Gets a parsed argument value.  Will echo the value of the given argument.
 # Returns 1 if the argument does not exist as well as echos an empty string.
 function get_argument_value() {
@@ -338,6 +447,7 @@ function get_argument_value() {
   local output=1
 
   local arg_index
+
   arg_index=$(find_argument_index "${arg_name}")
 
   if [[ ${arg_index} -gt -1 ]]; then
@@ -355,6 +465,7 @@ function get_argument_error() {
   local output=1
 
   local arg_index
+
   arg_index=$(find_argument_index "${arg_name}")
 
   if [[ ${arg_index} -gt -1 ]]; then

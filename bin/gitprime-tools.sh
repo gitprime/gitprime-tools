@@ -176,13 +176,18 @@ else
         # Ask the tool to add appropriate arguments
         add_arguments
 
-        if [[ ${#OUR_ARGUMENTS[@]} -gt 0 ]]; then
-          # We need to parse the arguments.  That means its up to us.
-          parse_cli_arguments "${OUR_ARGUMENTS[@]}"
-        fi
+        parse_cli_arguments "${OUR_ARGUMENTS[@]}"
 
-        # Ok, we're not doing help, instead we're doing the actual action.
-        execute_gpt_command
+        if [[ ${#GPT_ARG_PARSER_ERRORS} -gt 0 ]]; then
+          log.error "There were invalid command options: "
+
+          for parser_error in "${GPT_ARG_PARSER_ERRORS[@]}"; do
+            log.error "    * ${parser_error}"
+          done
+        else
+          # Ok, we're not doing help, instead we're doing the actual action.
+          execute_gpt_command
+        fi
       fi
     else
       log.error "The command ${OUR_COMMAND} cannot be processed."
