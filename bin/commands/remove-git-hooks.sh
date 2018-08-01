@@ -15,18 +15,19 @@ source "${GITPRIME_TOOLS_HOME}/library/common.sh"
 # shellcheck source=../../library/cli.sh
 source "${GITPRIME_TOOLS_HOME}/library/cli.sh"
 
-declare -a HOOK_NAMES
+declare -aG HOOK_NAMES
 
-HOOK_NAMES[0]="applypatch-msg"
-HOOK_NAMES[1]="update"
-HOOK_NAMES[2]="post-update"
-HOOK_NAMES[3]="pre-applypatch"
-HOOK_NAMES[4]="pre-push"
-HOOK_NAMES[5]="pre-receive"
-HOOK_NAMES[6]="commit-msg"
-HOOK_NAMES[7]="pre-commit"
-HOOK_NAMES[8]="prepare-commit-msg"
-HOOK_NAMES[9]="pre-rebase"
+GPT_HOOK_NAMES[0]="applypatch-msg"
+GPT_HOOK_NAMES[1]="commit-msg"
+GPT_HOOK_NAMES[2]="fsmonitor-watchman"
+GPT_HOOK_NAMES[3]="post-update"
+GPT_HOOK_NAMES[4]="pre-applypatch"
+GPT_HOOK_NAMES[5]="pre-commit"
+GPT_HOOK_NAMES[6]="prepare-commit-msg"
+GPT_HOOK_NAMES[7]="pre-push"
+GPT_HOOK_NAMES[8]="pre-rebase"
+GPT_HOOK_NAMES[9]="pre-receive"
+GPT_HOOK_NAMES[10]="update"
 
 # The required show_help function
 function show_help() {
@@ -45,16 +46,41 @@ function add_arguments() {
 
 # The required execute_gpt_command function
 function execute_gpt_command() {
-    REPO_PATH=$(get_argument_value "repo-path")
+  REPO_PATH=$(get_argument_value "repo-path")
 
-    log "Initial repo path"
+  if [[ -z $REPO_PATH ]];
+  then
+      REPO_PATH=$(pwd)
+  fi
 
-    if [[ -z $REPO_PATH ]];
-    then
-        REPO_PATH=$(pwd)
+  local git_dir="${REPO_PATH}/.git"
+  local hooks_dir="${git_dir}/hooks"
+
+  log "Beginning removal of GitPrime hooks system from repository located at ${REPO_PATH}"
+
+  if [[ -d "${REPO_PATH}" ]]; then
+    if [[ -d "${git_dir}" ]]; then
+      log.info "Found a valid git repository at: ${REPO_PATH}"
+
+      if [[ -d "${hooks_dir}" ]]; then
+        for hook_name in "${GPT_HOOK_NAMES[@]}"; do
+          log.info "    Removing hook: ${hook_name}"
+
+          rm -f "${hooks_dir}/${hook_name}"
+        done
+      else
+        log.info "    There is no hooks directory in this repository.  Finishing up."
+      fi
+    else
+      log.error "The directory specified is does not seem to be a git repository:: ${REPO_PATH}"
+
+      return 1
     fi
+  else
+    log.error "The repository path specified is not a directory: ${REPO_PATH}"
 
-    log "Beginning removal of GitPrime hooks system from repository located at ${REPO_PATH}"
+    return 1
+  fi
 }
 
 function destroy() {

@@ -46,41 +46,47 @@ function add_arguments() {
 
 # The required execute_gpt_command function
 function execute_gpt_command() {
-    REPO_PATH=$(get_argument_value "repo-path")
+  REPO_PATH=$(get_argument_value "repo-path")
 
-    if [[ -z $REPO_PATH ]];
-    then
-        REPO_PATH=$(pwd)
-    fi
+  if [[ -z $REPO_PATH ]];
+  then
+      REPO_PATH=$(pwd)
+  fi
 
-    local git_dir="${REPO_PATH}/.git"
-    local hooks_dir="${git_dir}/hooks"
+  local git_dir="${REPO_PATH}/.git"
+  local hooks_dir="${git_dir}/hooks"
 
-    log "Beginning installation of GitPrime hooks system into repository located at ${REPO_PATH}"
+  log "Beginning installation of GitPrime hooks system into repository located at ${REPO_PATH}"
 
-    if [[ -d "${REPO_PATH}" ]]; then
-      if [[ -d "${git_dir}" ]]; then
-        log.info "Found a valid git repository at: ${REPO_PATH}"
+  if [[ -d "${REPO_PATH}" ]]; then
+    if [[ -d "${git_dir}" ]]; then
+      log.info "Found a valid git repository at: ${REPO_PATH}"
 
-        if [[ ! -d "${hooks_dir}" ]]; then
-          mkdir "${hooks_dir}"
+      if [[ ! -d "${hooks_dir}" ]]; then
+        mkdir "${hooks_dir}"
+      fi
+
+      for hook_name in "${GPT_HOOK_NAMES[@]}"; do
+        log.info "    Installing hook: ${hook_name}"
+
+        if [[ -f "${hooks_dir}/${hook_name}" ]]; then
+          log.info "        There is already a hook in place.  Replacing"
+
+          rm -f "${hooks_dir}/${hook_name}"
         fi
 
-        for hook_name in "${GPT_HOOK_NAMES[@]}"; do
-          log.info "    Installing hook: ${hook_name}"
-
-          ln -s "${GITPRIME_TOOLS_HOME}/git/hooks/hook-delegator.sh" "${hooks_dir}/${hook_name}"
-        done
-      else
-        log.error "The directory specified is does not seem to be a git repository:: ${REPO_PATH}"
-
-        return 1
-      fi
+        ln -s "${GITPRIME_TOOLS_HOME}/git/hooks/hook-delegator.sh" "${hooks_dir}/${hook_name}"
+      done
     else
-      log.error "The repository path specified is not a directory: ${REPO_PATH}"
+      log.error "The directory specified is does not seem to be a git repository:: ${REPO_PATH}"
 
       return 1
     fi
+  else
+    log.error "The repository path specified is not a directory: ${REPO_PATH}"
+
+    return 1
+  fi
 }
 
 function destroy() {
