@@ -15,7 +15,7 @@ source "${GITPRIME_TOOLS_HOME}/library/common.sh"
 # shellcheck source=../../library/cli.sh
 source "${GITPRIME_TOOLS_HOME}/library/cli.sh"
 
-declare -aG GPT_HOOK_NAMES
+declare -aG HOOK_NAMES
 
 GPT_HOOK_NAMES[0]="applypatch-msg"
 GPT_HOOK_NAMES[1]="commit-msg"
@@ -31,8 +31,8 @@ GPT_HOOK_NAMES[10]="update"
 
 # The required show_help function
 function show_help() {
-  log.info "The install-git-hooks command will install a set of hooks into the"
-  log.info "git repository specified.  If none is specified, it assumes that"
+  log.info "The remove-git-hooks command will remove the GitPrime Tool Hooks From"
+  log.info "the git repository specified.  If none is specified, it assumes that"
   log.info "the current directory is a git repository."
 
   log.info
@@ -41,7 +41,7 @@ function show_help() {
 }
 
 function add_arguments() {
-  add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 0 "The path to the git repository you want to add hooks to"
+  add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 0 "The path to the repository you want to remove hooks from"
 }
 
 # The required execute_gpt_command function
@@ -56,27 +56,21 @@ function execute_gpt_command() {
   local git_dir="${REPO_PATH}/.git"
   local hooks_dir="${git_dir}/hooks"
 
-  log "Beginning installation of GitPrime hooks system into repository located at ${REPO_PATH}"
+  log "Beginning removal of GitPrime hooks system from repository located at ${REPO_PATH}"
 
   if [[ -d "${REPO_PATH}" ]]; then
     if [[ -d "${git_dir}" ]]; then
       log.info "Found a valid git repository at: ${REPO_PATH}"
 
-      if [[ ! -d "${hooks_dir}" ]]; then
-        mkdir "${hooks_dir}"
-      fi
-
-      for hook_name in "${GPT_HOOK_NAMES[@]}"; do
-        log.info "    Installing hook: ${hook_name}"
-
-        if [[ -f "${hooks_dir}/${hook_name}" ]]; then
-          log.info "        There is already a hook in place.  Replacing"
+      if [[ -d "${hooks_dir}" ]]; then
+        for hook_name in "${GPT_HOOK_NAMES[@]}"; do
+          log.info "    Removing hook: ${hook_name}"
 
           rm -f "${hooks_dir}/${hook_name}"
-        fi
-
-        ln -s "${GITPRIME_TOOLS_HOME}/git/hooks/hook-delegator.sh" "${hooks_dir}/${hook_name}"
-      done
+        done
+      else
+        log.info "    There is no hooks directory in this repository.  Finishing up."
+      fi
     else
       log.error "The directory specified is does not seem to be a git repository:: ${REPO_PATH}"
 
@@ -91,5 +85,5 @@ function execute_gpt_command() {
 
 function destroy() {
   # Nothing really to do here.
-  log "Completed Installation of Git Hooks"
+  log "Completed Removal of Git Hooks"
 }
