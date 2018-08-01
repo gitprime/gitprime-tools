@@ -40,7 +40,6 @@ function show_help() {
 }
 
 function add_arguments() {
-  add_cli_argument "help" "h" ${GPT_ARG_TYPE_FLAG} 0 "Shows the help screen"
   add_cli_argument "repo-path" "r" ${GPT_ARG_TYPE_VALUE} 0 "The path to the repository you want to remove hooks from"
 }
 
