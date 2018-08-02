@@ -1,5 +1,0 @@
-# Enter a subject line here in the format of TICKET-NUMBER: Subject text.
-# For example, GP-1234: This fixes a bug.
-${TICKET_NUMBER}:
-
-# Now enter much more detailed information about your commit here.
