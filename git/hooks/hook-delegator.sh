@@ -52,3 +52,5 @@ for HOOK_DIRECTORY in "${HOOK_DIRECTORIES[@]}"; do
     done
   fi
 done
+
+log.info "Completed hooks of type: ${HOOK_NAME}"
