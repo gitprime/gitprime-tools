@@ -217,7 +217,7 @@ function show_argument_info() {
     requirement="${GPT_ARG_PARSER_REQUIREMENTS[x]}"
 
     if [[ ${requirement} -eq 1 ]]; then
-      requirement "yes"
+      requirement="yes"
     else
       # the trailing space is intentional
       requirement="no "

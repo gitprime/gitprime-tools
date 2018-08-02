@@ -284,3 +284,68 @@ function populate_valid_command_array() {
     done
   fi
 }
+
+function update_environment_files() {
+  # Get the args passed
+  local gpt_home=$1
+  local gpt_ticket_url=$2
+
+  # The header and footer lines where we hide stuff between.
+  local header_line="########################## GitPrime Tools START ##########################"
+  local footer_line="########################## GitPrime Tools STOP  ##########################"
+
+  # Our next major step is that we need to add something into the .bashrc or .profile of our
+  # user so that they have access to the environment and some other stuff.  We need
+  # to pick which one we want.  I believe we prefer .bashrc
+  declare -a env_files
+
+  env_files[0]="${HOME}/.bashrc"
+  env_files[1]="${HOME}/.profile"
+  env_files[2]="${HOME}/.bash_profile"
+
+  local chosen_env_file=0
+
+  for TEST_ENV_FILE in "${env_files[@]}"; do
+    if [[ -f "${TEST_ENV_FILE}" ]]; then
+      chosen_env_file="${TEST_ENV_FILE}"
+
+      break
+    fi
+  done
+
+  if [[ "${chosen_env_file}" == "0" ]]; then
+    # Hmmm we don't see to have any of them.  We're going to check some things.
+    chosen_env_file=${env_files[0]}
+
+    log.warn "No environment/profile file could be found.  We're defaulting to ${chosen_env_file}"
+  fi
+
+  if [[ -f "${chosen_env_file}" ]]; then
+    # We're going to backup the old file
+    local TMP_DATE=$(date +%Y-%m-%d-%H-%M-%S)
+
+    cp "${chosen_env_file}" "${chosen_env_file}.${TMP_DATE}.bak"
+  fi
+
+  log "Configuring GitPrime Development Tools to load from ${chosen_env_file}"
+
+  # First thing, we remove any old settings
+  sed -i "/${header_line}/,/${footer_line}/d" "${chosen_env_file}"
+
+  # Next, we just append our stuff to the end
+  echo "${header_line}" >>"${chosen_env_file}"
+
+  # Setup the home variable
+  echo "export GITPRIME_TOOLS_HOME=\"${gpt_home}\"" >>"${chosen_env_file}"
+
+  # Setup the ticket variable if we have it
+  if [[ ${gpt_ticket_url} != 0 ]]; then
+    echo "export GITPRIME_TOOLS_TICKET_URL=\"${gpt_ticket_url}\"" >>"${chosen_env_file}"
+  fi
+
+  # Set the aliases to load
+  echo "source ${gpt_home}/library/aliases.sh" >>"${chosen_env_file}"
+
+  # Close it out with the footer
+  echo "${footer_line}" >>"${chosen_env_file}"
+}
