@@ -56,7 +56,7 @@ function show_help() {
 
 function add_arguments() {
   add_cli_argument "help" "h" ${GPT_ARG_TYPE_FLAG} 0 "Show the help information."
-  add_cli_argument "home-directory" "d" ${GPT_ARG_TYPE_VALUE} 0 "The directory where you want your new GitPrime Tools installation."
+  add_cli_argument "directory" "d" ${GPT_ARG_TYPE_VALUE} 0 "The directory where you want your new GitPrime Tools installation."
   add_cli_argument "ticket-url" "t" ${GPT_ARG_TYPE_VALUE} 0 "The URL of your ticket server to include in commit messages."
 }
 
@@ -86,7 +86,7 @@ if [[ ${HELP_TEST} == 1 ]]; then
 fi
 
 # If we got a home directory, we need to override the one we guessed at.
-HOME_TEST=$(get_argument_value "home-directory")
+HOME_TEST=$(get_argument_value "directory")
 
 if [[ "${HOME_TEST}" != "-1" ]] && [[ ! -z "${HOME_TEST}" ]]; then
   # Looks like we got one

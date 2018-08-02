@@ -35,19 +35,28 @@ function show_help() {
 function add_arguments() {
   add_cli_argument "version" "v" ${GPT_ARG_TYPE_VALUE} 0 "The version number to update to.  Defaults to the latest."
   add_cli_argument "allow-prerelease" "p" ${GPT_ARG_TYPE_FLAG} 0 "If set, the updater will use pre-release versions of the tools."
-  add_cli_argument "home" "h" ${GPT_ARG_TYPE_VALUE} 0 "The directory where you want your new GitPrime Tools installation."
+  add_cli_argument "directory" "d" ${GPT_ARG_TYPE_VALUE} 0 "The directory where you want your new GitPrime Tools installation."
+  add_cli_argument "ticket-url" "t" ${GPT_ARG_TYPE_VALUE} 0 "The URL of your ticket server to include in commit messages."
 }
 
 # The required execute_gpt_command function
 function execute_gpt_command() {
   UPDATE_TEMP_DIRECTORY=$(mktemp -d)
 
+  local new_home="${GITPRIME_TOOLS_HOME}"
+  local new_ticket_url="${GITPRIME_TOOLS_TICKET_URL}"
+
   local version=$(get_argument_value "version")
   local allow_prerelease=$(get_argument_value "allow-prerelease")
-  local new_home=$(get_argument_value "home")
+  local new_home_test=$(get_argument_value "directory")
+  local new_ticket_url_test=$(get_argument_value "ticket-url")
 
-  if [[ -z "${new_home}" ]] || [[ "${new_home}" == "0" ]]; then
-    new_home="${GITPRIME_TOOLS_HOME}"
+  if [[ ! -z "${new_home_test}" ]] || [[ "${new_home_test}" != "0" ]]; then
+    new_home="${new_home_test}"
+  fi
+
+  if [[ ! -z "${new_ticket_url_test}" ]] || [[ "${new_ticket_url_test}" != "0" ]]; then
+    new_ticket_url="${new_ticket_url_test}"
   fi
 
   local download_url=0
@@ -163,8 +172,10 @@ function execute_gpt_command() {
     react_to_exit_code $? "Unable to install GitPrime Tools at ${new_home}"
 
     if [[ "${new_home}" != "${GITPRIME_TOOLS_HOME}" ]]; then
+      update_environment_files "${new_home}" "${new_ticket_url}"
+
       log.warn "You specified a new home directory that does not match your currently installed version."
-      log.warn "You will need to update your .bashrc, .bash_profile, or .profile to reflect the changes."
+      log.warn "You will need to update your reload your shell for changes to take effect."
     fi
   else
     log.error "The expected files were not found in the update artifact."
