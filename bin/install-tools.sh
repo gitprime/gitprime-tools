@@ -69,6 +69,10 @@ parse_cli_arguments "$@"
 if [[ ${#GPT_ARG_PARSER_ERRORS} -gt 0 ]]; then
   log.error "There were invalid command options: "
 
+  for parser_error in "${GPT_ARG_PARSER_ERRORS[@]}"; do
+    log.error "    * ${parser_error}"
+  done
+
   show_help
 
   handle_exit 1
