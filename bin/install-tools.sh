@@ -96,8 +96,6 @@ fi
 # If we got a ticket URL, we need to override the one we guessed at.
 TICKET_URL_TEST=$(get_argument_value "ticket-url")
 
-log "Ticket URL test: #${TICKET_URL_TEST}#"
-
 if [[ "${TICKET_URL_TEST}" != "-1" ]] && [[ ! -z "${TICKET_URL_TEST}" ]]; then
   # Looks like we got one
   GPT_TICKET_URL="${TICKET_URL_TEST}"

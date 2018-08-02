@@ -330,7 +330,9 @@ function update_environment_files() {
   log "Configuring GitPrime Development Tools to load from ${chosen_env_file}"
 
   # First thing, we remove any old settings
-  sed -i "/${header_line}/,/${footer_line}/d" "${chosen_env_file}"
+  sed -i -e "/${header_line}/,/${footer_line}/d" "${chosen_env_file}"
+
+  react_to_exit_code $? "Unable to update ${chosen_env_file} with the GitPrime Tools environment variables"
 
   # Next, we just append our stuff to the end
   echo "${header_line}" >>"${chosen_env_file}"

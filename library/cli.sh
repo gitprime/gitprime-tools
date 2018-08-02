@@ -369,7 +369,7 @@ function parse_cli_arguments() {
         if [[ ${our_char} == "=" ]]; then
           # We need to use the REST of this string
           if [[ ${y} -gt 0 ]]; then
-            final_args[-1]="${final_args[-1]}${tmp_str:$y}"
+            final_args[x]="${final_args[x]}${tmp_str:$y}"
 
             break
           else
@@ -386,7 +386,7 @@ function parse_cli_arguments() {
       final_args+=("${arg_array[x]}")
     fi
 
-    handle_cli_argument "${final_args[-1]}"
+    handle_cli_argument "${final_args[x]}"
   done
 
   local arg_index=-1

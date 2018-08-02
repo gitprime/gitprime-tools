@@ -95,3 +95,21 @@ function find_branch_ticket_number() {
 
   echo -n "${TMP_OUTPUT}"
 }
+
+function get_git_hook_names() {
+  declare -a GPT_HOOK_NAMES
+
+  GPT_HOOK_NAMES[0]="applypatch-msg"
+  GPT_HOOK_NAMES[1]="commit-msg"
+  GPT_HOOK_NAMES[2]="fsmonitor-watchman"
+  GPT_HOOK_NAMES[3]="post-update"
+  GPT_HOOK_NAMES[4]="pre-applypatch"
+  GPT_HOOK_NAMES[5]="pre-commit"
+  GPT_HOOK_NAMES[6]="prepare-commit-msg"
+  GPT_HOOK_NAMES[7]="pre-push"
+  GPT_HOOK_NAMES[8]="pre-rebase"
+  GPT_HOOK_NAMES[9]="pre-receive"
+  GPT_HOOK_NAMES[10]="update"
+
+  echo "${GPT_HOOK_NAMES[@]}"
+}

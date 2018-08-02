@@ -40,9 +40,9 @@ HOOK_DIRECTORIES[1]="$(pwd)/.gp-tools/hooks/${HOOK_NAME}"
 
 for HOOK_DIRECTORY in "${HOOK_DIRECTORIES[@]}"; do
   if [[ -d "${HOOK_DIRECTORY}" ]]; then
-    for HOOK_FILE in "${HOOK_DIRECTORY}"/*; do
+    for HOOK_FILE in "${HOOK_DIRECTORY}"/*.sh; do
       # shellcheck disable=SC1090
-      source "${HOOK_FILE}" ${HOOK_ARGUMENTS}
+      exec "${HOOK_FILE}" ${HOOK_ARGUMENTS}
 
       if [[ $? -ne 0 ]]; then
         log.error "Failed to execute hook at ${HOOK_DIRECTORY}/${HOOK_NAME}"
