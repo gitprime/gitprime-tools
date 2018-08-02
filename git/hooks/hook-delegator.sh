@@ -38,19 +38,26 @@ HOOK_DIRECTORIES[0]="${GITPRIME_TOOLS_HOME}/git/hooks/${HOOK_NAME}"
 # This directory should be any hooks in the project
 HOOK_DIRECTORIES[1]="$(pwd)/.gp-tools/hooks/${HOOK_NAME}"
 
+HAS_CHANGE=0
+
 for HOOK_DIRECTORY in "${HOOK_DIRECTORIES[@]}"; do
   if [[ -d "${HOOK_DIRECTORY}" ]]; then
-    for HOOK_FILE in "${HOOK_DIRECTORY}"/*.sh; do
-      # shellcheck disable=SC1090
-      exec "${HOOK_FILE}" ${HOOK_ARGUMENTS}
+    for HOOK_FILE in "${HOOK_DIRECTORY}"/*; do
+      if [[ "${HOOK_FILE}" == *".sh" ]]; then
+        "${HOOK_FILE}" ${HOOK_ARGUMENTS}
 
-      if [[ $? -ne 0 ]]; then
-        log.error "Failed to execute hook at ${HOOK_DIRECTORY}/${HOOK_NAME}"
+        if [[ $? -ne 0 ]]; then
+          log.error "Failed to execute hook at ${HOOK_DIRECTORY}/${HOOK_NAME}"
 
-        exit 200
+          exit 200
+        else
+          HAS_CHANGE=1
+        fi
       fi
     done
   fi
 done
 
-log.info "Completed hooks of type: ${HOOK_NAME}"
+if [[ ${HAS_CHANGE} == 1 ]]; then
+  log.info "Completed hooks of type: ${HOOK_NAME}"
+fi
