@@ -97,7 +97,17 @@ function execute_gpt_command() {
       fi
 
       # Convert create_data into an integer so we can compare
-      rel_date=$(date -d "${rel_date}" +"%s")
+      # Macs have a broken date command.  Its just not nearly as functional as the regular one found in most
+      # modern *nix systems.  So, to deal with that, we're doing a little test.
+      date -j > /dev/null 2>&1
+
+      if [[ $? == 0 ]]; then
+        # We have to use the mac date command
+        rel_date=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${rel_date}" +"%s" 2>/dev/null)
+      else
+        # We'll use the good date command
+        rel_date=$(date -d "${rel_date}" +"%s")
+      fi
 
       if [[ ${rel_date} -gt ${best_date} ]]; then
         best_date=${rel_date}
