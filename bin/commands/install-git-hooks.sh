@@ -14,20 +14,8 @@
 source "${GITPRIME_TOOLS_HOME}/library/common.sh"
 # shellcheck source=../../library/cli.sh
 source "${GITPRIME_TOOLS_HOME}/library/cli.sh"
-
-declare -aG GPT_HOOK_NAMES
-
-GPT_HOOK_NAMES[0]="applypatch-msg"
-GPT_HOOK_NAMES[1]="commit-msg"
-GPT_HOOK_NAMES[2]="fsmonitor-watchman"
-GPT_HOOK_NAMES[3]="post-update"
-GPT_HOOK_NAMES[4]="pre-applypatch"
-GPT_HOOK_NAMES[5]="pre-commit"
-GPT_HOOK_NAMES[6]="prepare-commit-msg"
-GPT_HOOK_NAMES[7]="pre-push"
-GPT_HOOK_NAMES[8]="pre-rebase"
-GPT_HOOK_NAMES[9]="pre-receive"
-GPT_HOOK_NAMES[10]="update"
+# shellcheck source=../../library/cli.sh
+source "${GITPRIME_TOOLS_HOME}/library/git.sh"
 
 # The required show_help function
 function show_help() {
@@ -46,6 +34,8 @@ function add_arguments() {
 
 # The required execute_gpt_command function
 function execute_gpt_command() {
+  local hook_names=($(get_git_hook_names))
+
   REPO_PATH=$(get_argument_value "repo-path")
 
   if [[ -z $REPO_PATH ]];
@@ -66,7 +56,7 @@ function execute_gpt_command() {
         mkdir "${hooks_dir}"
       fi
 
-      for hook_name in "${GPT_HOOK_NAMES[@]}"; do
+      for hook_name in "${hook_names[@]}"; do
         log.info "    Installing hook: ${hook_name}"
 
         if [[ -f "${hooks_dir}/${hook_name}" ]]; then

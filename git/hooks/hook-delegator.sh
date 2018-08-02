@@ -14,8 +14,6 @@ if [[ ! -z "${GITPRIME_TOOLS_HOME}" ]]; then
   source "${GITPRIME_TOOLS_HOME}/library/common.sh"
   # shellcheck source=../../library/git.sh
   source "${GITPRIME_TOOLS_HOME}/library/git.sh"
-
-  log.info "Using GitPrime Tools at ${GITPRIME_TOOLS_HOME}"
 else
   # Nope still don't have a home, we need to throw an error
   echo -e "ERROR: GITPRIME_TOOLS_HOME is not set.  Please set it in your .profile or .bashrc."
@@ -40,19 +38,26 @@ HOOK_DIRECTORIES[0]="${GITPRIME_TOOLS_HOME}/git/hooks/${HOOK_NAME}"
 # This directory should be any hooks in the project
 HOOK_DIRECTORIES[1]="$(pwd)/.gp-tools/hooks/${HOOK_NAME}"
 
-for HOOK_DIRECTORY in "${HOOK_DIRECTORIES[@]}"; do
-  log.info "Doing Hooks In: ${HOOK_DIRECTORY}"
+HAS_CHANGE=0
 
+for HOOK_DIRECTORY in "${HOOK_DIRECTORIES[@]}"; do
   if [[ -d "${HOOK_DIRECTORY}" ]]; then
     for HOOK_FILE in "${HOOK_DIRECTORY}"/*; do
-      # shellcheck disable=SC1090
-      source "${HOOK_FILE}" ${HOOK_ARGUMENTS}
+      if [[ "${HOOK_FILE}" == *".sh" ]]; then
+        "${HOOK_FILE}" ${HOOK_ARGUMENTS}
 
-      if [[ $? -ne 0 ]]; then
-        log.error "Failed to execute hook at ${HOOK_DIRECTORY}/${HOOK_NAME}"
+        if [[ $? -ne 0 ]]; then
+          log.error "Failed to execute hook at ${HOOK_DIRECTORY}/${HOOK_NAME}"
 
-        exit 200
+          exit 200
+        else
+          HAS_CHANGE=1
+        fi
       fi
     done
   fi
 done
+
+if [[ ${HAS_CHANGE} == 1 ]]; then
+  log.info "Completed hooks of type: ${HOOK_NAME}"
+fi

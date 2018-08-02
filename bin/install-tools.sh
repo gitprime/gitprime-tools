@@ -7,11 +7,6 @@
 # This script is intended to install the GitPrime tool set into
 # a location specified.
 
-# Some variables we need and will be setting
-
-# The clone URL to use with GitHub to get the tools
-GPT_CLONE_URL="https://github.com/gitprime/gitprime-tools.git"
-
 # The home directory for the tools
 if [[ ! -z "${GITPRIME_TOOLS_HOME}" ]]; then
   GPT_HOME="${GITPRIME_TOOLS_HOME}"
@@ -26,180 +21,93 @@ else
   GPT_TICKET_URL=0
 fi
 
-# The header and footer lines where we hide stuff between.
-GPT_HEADER_LINE="########################## GitPrime Tools START ##########################"
-GPT_FOOTER_LINE="########################## GitPrime Tools STOP  ##########################"
-
-# Just a placeholder, we'll overwrite it
-INST_GPT_COLOR_ENABLED=0
-
 # A tmp directory to do some work in
 TMP_DIRECTORY=0
 
-# Setup colors for logging and stuff
-#
-# NOTE:  This is somewhat duplicated from the common.sh in library.  Sadly,
-# NOTE:  we don't have it locally when this script is run, so we have to
-# NOTE:  duplicate it.
-function setup_colors() {
-  if [[ ${INST_GPT_COLOR_ENABLED} -eq 0 ]]; then
-    # We've never set the GPT_COLOR_ENABLED before.  So we should
-    # use our nifty logic to setup some color variables
-    if test -t 1; then
-      # see if it supports colors...
-      local COLOR_TEST
+# The directory we're running in so that we can source some stuff
+CMD_BASE_DIR=$0
 
-      COLOR_TEST=$(tput colors)
+CMD_BASE_DIR=$(dirname "${CMD_BASE_DIR}")
 
-      if test -n "${COLOR_TEST}" && test ${COLOR_TEST} -ge 8; then
-        bold="$(tput bold)"
-        normal="$(tput sgr0)"
-        red="$(tput setaf 1)"
-      fi
-    fi
+if [[ "${CMD_BASE_DIR}" != "/"* ]]; then
+  # We used a relative path, we'll add the current working directory
+  CMD_BASE_DIR="$(pwd)/${CMD_BASE_DIR}"
+fi
 
-    export INST_GPT_COLOR_ENABLED=1
-  fi
+if [[ "${CMD_BASE_DIR}" == *"/bin" ]]; then
+  CMD_BASE_DIR=$(dirname "${CMD_BASE_DIR}")
+fi
+
+# Import the common libraries.  This lets us use all our nifty code.  However, because they sometimes rely on
+# the GITPRIME_TOOLS_HOME environment variable, we're going to cheat that a bit.
+# shellcheck source=../../library/common.sh
+GITPRIME_TOOLS_HOME="${CMD_BASE_DIR}" source "${CMD_BASE_DIR}/library/common.sh"
+# shellcheck source=../../library/cli.sh
+GITPRIME_TOOLS_HOME="${CMD_BASE_DIR}" source "${CMD_BASE_DIR}/library/cli.sh"
+
+# The required show_help function
+function show_help() {
+  log.info "The install command will attempt to install GitPrime Tools."
+
+  log.info
+
+  show_argument_info
 }
 
-# This is a simple log method.  It's not as advanced as we'd like,
-# but it does the job.
-#
-# NOTE:  This is somewhat duplicated from the common.sh in library.  Sadly,
-# NOTE:  we don't have it locally when this script is run, so we have to
-# NOTE:  duplicate it.
-function log() {
-  setup_colors
-
-  local MESSAGE="$*"
-
-  local HEADER="${bold}[GP-TOOLS]${normal}"
-
-  echo -e "${HEADER} ${MESSAGE}"
+function add_arguments() {
+  add_cli_argument "help" "h" ${GPT_ARG_TYPE_FLAG} 0 "Show the help information."
+  add_cli_argument "directory" "d" ${GPT_ARG_TYPE_VALUE} 0 "The directory where you want your new GitPrime Tools installation."
+  add_cli_argument "ticket-url" "t" ${GPT_ARG_TYPE_VALUE} 0 "The URL of your ticket server to include in commit messages."
 }
 
-function log.important() {
-  setup_colors
+add_arguments
 
-  local MESSAGE="$*"
+parse_cli_arguments "$@"
 
-  local HEADER="${red}[GP-TOOLS]${normal}"
+if [[ ${#GPT_ARG_PARSER_ERRORS} -gt 0 ]]; then
+  log.error "There were invalid command options: "
 
-  echo -e "${HEADER} ${MESSAGE}"
-}
-
-# Parse the command line arguments we accept
-function parse_options() {
-  local OUTPUT=0
-
-  while test -n "$1"; do
-    case "$1" in
-    --home)
-      if test -n "$2"; then
-        GPT_HOME=$2
-        shift 2
-      else
-        OUTPUT=3
-        shift 1
-      fi
-      ;;
-
-    --ticket-url)
-      if test -n "$2"; then
-        GPT_TICKET_URL=$2
-        shift 2
-      else
-        OUTPUT=3
-        shift 1
-      fi
-      ;;
-
-    --help)
-      OUTPUT=2
-      shift 1
-      ;;
-
-    *)
-      shift
-      ;;
-    esac
+  for parser_error in "${GPT_ARG_PARSER_ERRORS[@]}"; do
+    log.error "    * ${parser_error}"
   done
 
-  return ${OUTPUT}
-}
-
-# This function prints the help for the tool
-function print_help() {
-  log "This script installs the GitPrime Development Tools.  To use the tool"
-  log "you can execute the installer with the following options: "
-  log ""
-  log "   --home:  Sets the home directory where the tools will be installed."
-  log "            This defaults to ${HOME}/.gitprime-tools"
-  log ""
-  log "   --ticket-url:  Sets the base URL used for ticket lookups.  This should"
-  log "                  expect that the ticket number will be pre-pended after "
-  log "                  the URL.  This value has no default."
-  log ""
-  log "   --help:  Shows this help information."
-  log ""
-}
-
-# This method reacts to the given error code.  If the code is non-zero
-# the method exits the script and logs the given message.
-#
-# NOTE:  This is totally duplicated from the common.sh in library.  Sadly,
-# NOTE:  we don't have it locally when this script is run, so we have to
-# NOTE:  duplicate it.
-function react_to_exit_code() {
-  local EXIT_CODE=$1
-
-  shift 1
-
-  log_message="$*"
-
-  if [[ ${EXIT_CODE} -ne 0 ]]; then
-    handle_exit 1000 "$log_message"
-  fi
-}
-
-# Handles an exit based on the given code.
-# All other parameters are treated as a message to log before exiting.
-#
-# NOTE:  This is totally duplicated from the common.sh in library.  Sadly,
-# NOTE:  we don't have it locally when this script is run, so we have to
-# NOTE:  duplicate it.
-function handle_exit() {
-  local EXIT_CODE=$1
-
-  shift
-
-  if [[ "${TMP_DIRECTORY}" != "0" ]]; then
-    rm -fr "${TMP_DIRECTORY}"
-  fi
-
-  if [[ ! -z "$*" ]]; then
-    log.important "Exiting: $*"
-  fi
-
-  exit "${EXIT_CODE}"
-}
-
-parse_options "$@"
-
-OPTION_RESULTS=$?
-
-if [[ ${OPTION_RESULTS} -eq 2 ]]; then
-  print_help
+  show_help
 
   handle_exit 1
-else
-  react_to_exit_code ${OPTION_RESULTS} "Incorrect Options.  See help for more information."
+fi
+
+# Ok, we parsed the CLI options, now we need to use them
+HELP_TEST=$(get_argument_value "help")
+
+if [[ ${HELP_TEST} == 1 ]]; then
+  show_help
+
+  handle_exit 0
+fi
+
+# If we got a home directory, we need to override the one we guessed at.
+HOME_TEST=$(get_argument_value "directory")
+
+if [[ "${HOME_TEST}" != "-1" ]] && [[ ! -z "${HOME_TEST}" ]]; then
+  # Looks like we got one
+  GPT_HOME="${HOME_TEST}"
+fi
+
+# If we got a ticket URL, we need to override the one we guessed at.
+TICKET_URL_TEST=$(get_argument_value "ticket-url")
+
+if [[ "${TICKET_URL_TEST}" != "-1" ]] && [[ ! -z "${TICKET_URL_TEST}" ]]; then
+  # Looks like we got one
+  GPT_TICKET_URL="${TICKET_URL_TEST}"
 fi
 
 log "About to install the GitPrime Development tools to ${GPT_HOME}."
 
-if [[ ${GPT_TICKET_URL} -ne 0 ]]; then
-  # TODO: Make sure the URL has a trailing /
+if [[ ${GPT_TICKET_URL} != 0 ]]; then
+  if [[ "${GPT_TICKET_URL}" != *"/" ]]; then
+    GPT_TICKET_URL="${GPT_TICKET_URL}/"
+  fi
+
   log "Setting the base ticket URL to: ${GPT_TICKET_URL}"
 fi
 
@@ -210,99 +118,28 @@ if [[ ! -w "${TMP_BASE_DIR}" ]]; then
   handle_exit 100 "No permission to create home directory at ${GPT_HOME}"
 fi
 
-# Ok, we need to clone the repo but we need to test for git before we try to clone
-git --help > /dev/null 2>&1
-
-if [[ $? -ne 0 ]]; then
-  handle_exit 200 "Git does not seem to be present on this system.  Please make sure its installed and in the path."
-fi
-
-TMP_DIRECTORY=$(mktemp -d)
-
-react_to_exit_code $? "Could not create appropriate temp directory"
-
-log "Using temporary directory: ${TMP_DIRECTORY}"
-
-git clone "${GPT_CLONE_URL}" "${TMP_DIRECTORY}/gitprime-tools" >/dev/null 2>&1
-
-react_to_exit_code $? "Could not download the GitPrime Developer Tools."
-
-log "Downloaded the installation package"
-
-# Ok, we've cloned it, now we just need to copy it into place or *overwrite* the old version.
 if [[ -d "${GPT_HOME}" ]]; then
+  log "Removing previous installation of tools from ${GPT_HOME}"
+
   rm -fr "${GPT_HOME}"
 
-  react_to_exit_code $? "Could not remove old copy of the GitPrime Developer Tools."
+  react_to_exit_code $? "Unable to remove previous installation from ${GPT_HOME}"
 fi
 
-mv "${TMP_DIRECTORY}/gitprime-tools" "${GPT_HOME}"
+cp -R "${CMD_BASE_DIR}" "${GPT_HOME}"
 
-log "Installed GitPrime Developer Tools at ${GPT_HOME}"
+react_to_exit_code $? "Unable to copy installation to ${GPT_HOME}"
 
 export GITPRIME_TOOLS_HOME="${GPT_HOME}"
 
 export GITPRIME_TOOLS_TICKET_URL="${GPT_TICKET_URL}"
 
-# Our next major step is that we need to add something into the .bashrc or .profile of our
-# user so that they have access to the environment and some other stuff.  We need
-# to pick which one we want.  I believe we prefer .bashrc
-declare -a ENV_FILES
-
-ENV_FILES[0]="${HOME}/.bashrc"
-ENV_FILES[1]="${HOME}/.profile"
-ENV_FILES[2]="${HOME}/.bash_profile"
-
-CHOSEN_ENV_FILE=0
-
-for TEST_ENV_FILE in "${ENV_FILES[@]}"; do
-  if [[ -f "${TEST_ENV_FILE}" ]]; then
-    CHOSEN_ENV_FILE="${TEST_ENV_FILE}"
-
-    break
-  fi
-done
-
-if [[ "${CHOSEN_ENV_FILE}" == "0" ]]; then
-  # Hmmm we don't see to have any of them.  We're going to check some things.
-  CHOSEN_ENV_FILE=${ENV_FILES[0]}
-
-  log.warn "No environment/profile file could be found.  We're defaulting to ${CHOSEN_ENV_FILE}"
-fi
-
-if [[ -f "${CHOSEN_ENV_FILE}" ]]; then
-  # We're going to backup the old file
-  TMP_DATE=$(date +%Y-%m-%d-%H-%M-%S)
-
-  cp "${CHOSEN_ENV_FILE}" "${CHOSEN_ENV_FILE}.${TMP_DATE}.bak"
-fi
-
-log "Configuring GitPrime Development Tools to load from ${CHOSEN_ENV_FILE}"
-
-# First thing, we remove any old settings
-sed -i "/${GPT_HEADER_LINE}/,/${GPT_FOOTER_LINE}/d" "${CHOSEN_ENV_FILE}"
-
-# Next, we just append our stuff to the end
-echo "${GPT_HEADER_LINE}" >>"${CHOSEN_ENV_FILE}"
-
-# Setup the home variable
-echo "export GITPRIME_TOOLS_HOME=\"${GPT_HOME}\"" >>"${CHOSEN_ENV_FILE}"
-
-# Setup the ticket variable if we have it
-if [[ ${GPT_TICKET_URL} -ne 0 ]]; then
-  echo "export GITPRIME_TOOLS_TICKET_URL=\"${GPT_TICKET_URL}\"" >>"${CHOSEN_ENV_FILE}"
-fi
-
-# Set the aliases to load
-echo "source ${GPT_HOME}/library/aliases.sh" >>"${CHOSEN_ENV_FILE}"
-
-# Close it out with the footer
-echo "${GPT_FOOTER_LINE}" >>"${CHOSEN_ENV_FILE}"
+update_environment_files "${GPT_HOME}" "${GPT_TICKET_URL}"
 
 log "Installation completed."
 log ""
-log.important "The tools have been successfully installed.  However, you will not be able to"
-log.important "use them until you have reloaded your shell environment.  It is suggested that"
-log.important "you logout and log back in."
+log.warn "The tools have been successfully installed.  However, you will not be able to"
+log.warn "use them until you have reloaded your shell environment.  It is suggested that"
+log.warn "you logout and log back in."
 
 handle_exit 0

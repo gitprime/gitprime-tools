@@ -217,7 +217,7 @@ function show_argument_info() {
     requirement="${GPT_ARG_PARSER_REQUIREMENTS[x]}"
 
     if [[ ${requirement} -eq 1 ]]; then
-      requirement "yes"
+      requirement="yes"
     else
       # the trailing space is intentional
       requirement="no "
@@ -369,7 +369,7 @@ function parse_cli_arguments() {
         if [[ ${our_char} == "=" ]]; then
           # We need to use the REST of this string
           if [[ ${y} -gt 0 ]]; then
-            final_args[-1]="${final_args[-1]}${tmp_str:$y}"
+            final_args[x]="${final_args[x]}${tmp_str:$y}"
 
             break
           else
@@ -386,7 +386,7 @@ function parse_cli_arguments() {
       final_args+=("${arg_array[x]}")
     fi
 
-    handle_cli_argument "${final_args[-1]}"
+    handle_cli_argument "${final_args[x]}"
   done
 
   local arg_index=-1
@@ -398,6 +398,13 @@ function parse_cli_arguments() {
     if [[ ${GPT_ARG_PARSER_REQUIREMENTS[arg_index]} == 1 ]]; then
       if [[ ${GPT_ARG_PARSER_RESULTS[arg_index]} == -1 ]] || [[ -z "${GPT_ARG_PARSER_RESULTS[arg_index]}" ]]; then
         GPT_ARG_PARSER_ERRORS+=("Argument ${arg_long_name} is required.")
+      fi
+    fi
+
+    if [[ ${GPT_ARG_PARSER_TYPES[arg_index]} == ${GPT_ARG_TYPE_FLAG} ]]; then
+      # For flags, we want to make sure we set the value to false if there is no values set
+      if [[ ${GPT_ARG_PARSER_RESULTS[arg_index]} == -1 ]] || [[ -z "${GPT_ARG_PARSER_RESULTS[arg_index]}" ]]; then
+        GPT_ARG_PARSER_RESULTS[arg_index]=0
       fi
     fi
   done
