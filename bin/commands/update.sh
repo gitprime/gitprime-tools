@@ -134,8 +134,6 @@ function execute_gpt_command() {
   # the version number/title.  We'll need to deal with that
   local artifact_dir=$(find "${UPDATE_TEMP_DIRECTORY}" -type d -name "gitprime-gitprime-tools-*")
 
-  log.info "Artifact directory: ${artifact_dir}"
-
   if [[ -d "${artifact_dir}" ]]; then
     # Woo hoo! We found the directory, we just need to replace the old one.
     rm -fr ${new_home}
