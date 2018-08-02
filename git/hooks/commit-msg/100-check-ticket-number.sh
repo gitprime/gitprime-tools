@@ -106,7 +106,12 @@ else
   URL_TEST_RESULT=$?
 
   if [[ ${URL_TEST_RESULT} -ne 0 ]]; then
-    COMMIT_MSG_DATA=$(echo -e "${COMMIT_MSG_DATA}\n\n${GITPRIME_TOOLS_TICKET_URL}/${FINAL_TICKET_NUM}")
+    if [[ "${GITPRIME_TOOLS_TICKET_URL}" != *"/" ]]; then
+      # We don't have a trailing slash, so we want to add it
+      GITPRIME_TOOLS_TICKET_URL="${GITPRIME_TOOLS_TICKET_URL}/"
+    fi
+
+    COMMIT_MSG_DATA=$(echo -e "${COMMIT_MSG_DATA}\n\n${GITPRIME_TOOLS_TICKET_URL}${FINAL_TICKET_NUM}")
 
     WRITE_NEW_MESSAGE=1
   fi
