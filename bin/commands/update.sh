@@ -51,13 +51,15 @@ function execute_gpt_command() {
   local new_home_test=$(get_argument_value "directory")
   local new_ticket_url_test=$(get_argument_value "ticket-url")
 
-  if [[ ! -z "${new_home_test}" ]] || [[ "${new_home_test}" != "0" ]]; then
+  if [[ ! -z "${new_home_test}" ]] && [[ "${new_home_test}" != "0" ]]; then
     new_home="${new_home_test}"
   fi
 
-  if [[ ! -z "${new_ticket_url_test}" ]] || [[ "${new_ticket_url_test}" != "0" ]]; then
+  if [[ ! -z "${new_ticket_url_test}" ]] && [[ "${new_ticket_url_test}" != "0" ]]; then
     new_ticket_url="${new_ticket_url_test}"
   fi
+
+  return 0
 
   local download_url=0
 
