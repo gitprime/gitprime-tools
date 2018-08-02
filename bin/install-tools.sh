@@ -7,8 +7,6 @@
 # This script is intended to install the GitPrime tool set into
 # a location specified.
 
-# Some variables we need and will be setting
-
 # The home directory for the tools
 if [[ ! -z "${GITPRIME_TOOLS_HOME}" ]]; then
   GPT_HOME="${GITPRIME_TOOLS_HOME}"
