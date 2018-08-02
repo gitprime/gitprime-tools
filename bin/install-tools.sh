@@ -9,9 +9,6 @@
 
 # Some variables we need and will be setting
 
-# The clone URL to use with GitHub to get the tools
-GPT_CLONE_URL="https://github.com/gitprime/gitprime-tools.git"
-
 # The home directory for the tools
 if [[ ! -z "${GITPRIME_TOOLS_HOME}" ]]; then
   GPT_HOME="${GITPRIME_TOOLS_HOME}"
@@ -107,6 +104,7 @@ function parse_options() {
     --ticket-url)
       if test -n "$2"; then
         GPT_TICKET_URL=$2
+
         shift 2
       else
         OUTPUT=3
@@ -198,8 +196,11 @@ fi
 
 log "About to install the GitPrime Development tools to ${GPT_HOME}."
 
-if [[ ${GPT_TICKET_URL} -ne 0 ]]; then
-  # TODO: Make sure the URL has a trailing /
+if [[ ${GPT_TICKET_URL} != 0 ]]; then
+  if [[ "${GPT_TICKET_URL}" != *"/" ]]; then
+    GPT_TICKET_URL="${GPT_TICKET_URL}/"
+  fi
+
   log "Setting the base ticket URL to: ${GPT_TICKET_URL}"
 fi
 
@@ -210,35 +211,32 @@ if [[ ! -w "${TMP_BASE_DIR}" ]]; then
   handle_exit 100 "No permission to create home directory at ${GPT_HOME}"
 fi
 
-# Ok, we need to clone the repo but we need to test for git before we try to clone
-git --help > /dev/null 2>&1
+CMD_BASE_DIR=$0
 
-if [[ $? -ne 0 ]]; then
-  handle_exit 200 "Git does not seem to be present on this system.  Please make sure its installed and in the path."
+CMD_BASE_DIR=$(dirname "${CMD_BASE_DIR}")
+
+if [[ "${CMD_BASE_DIR}" != "/"* ]]; then
+  # We used a relative path, we'll add the current working directory
+  CMD_BASE_DIR="$(pwd)/${CMD_BASE_DIR}"
 fi
 
-TMP_DIRECTORY=$(mktemp -d)
+if [[ "${CMD_BASE_DIR}" == *"/bin" ]]; then
+  CMD_BASE_DIR=$(dirname "${CMD_BASE_DIR}")
+fi
 
-react_to_exit_code $? "Could not create appropriate temp directory"
-
-log "Using temporary directory: ${TMP_DIRECTORY}"
-
-git clone "${GPT_CLONE_URL}" "${TMP_DIRECTORY}/gitprime-tools" >/dev/null 2>&1
-
-react_to_exit_code $? "Could not download the GitPrime Developer Tools."
-
-log "Downloaded the installation package"
-
-# Ok, we've cloned it, now we just need to copy it into place or *overwrite* the old version.
 if [[ -d "${GPT_HOME}" ]]; then
+  log "Removing previous installation of tools from ${GPT_HOME}"
+
   rm -fr "${GPT_HOME}"
 
-  react_to_exit_code $? "Could not remove old copy of the GitPrime Developer Tools."
+  react_to_exit_code $? "Unable to remove previous installation from ${GPT_HOME}"
 fi
 
-mv "${TMP_DIRECTORY}/gitprime-tools" "${GPT_HOME}"
+log "Installing GitPrime Tools from ${CMD_BASE_DIR}"
 
-log "Installed GitPrime Developer Tools at ${GPT_HOME}"
+cp -R "${CMD_BASE_DIR}" "${GPT_HOME}"
+
+react_to_exit_code $? "Unable to copy installation to ${GPT_HOME}"
 
 export GITPRIME_TOOLS_HOME="${GPT_HOME}"
 
@@ -289,7 +287,7 @@ echo "${GPT_HEADER_LINE}" >>"${CHOSEN_ENV_FILE}"
 echo "export GITPRIME_TOOLS_HOME=\"${GPT_HOME}\"" >>"${CHOSEN_ENV_FILE}"
 
 # Setup the ticket variable if we have it
-if [[ ${GPT_TICKET_URL} -ne 0 ]]; then
+if [[ ${GPT_TICKET_URL} != 0 ]]; then
   echo "export GITPRIME_TOOLS_TICKET_URL=\"${GPT_TICKET_URL}\"" >>"${CHOSEN_ENV_FILE}"
 fi
 

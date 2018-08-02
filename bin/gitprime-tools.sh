@@ -187,6 +187,8 @@ else
         else
           # Ok, we're not doing help, instead we're doing the actual action.
           execute_gpt_command
+
+          destroy
         fi
       fi
     else
