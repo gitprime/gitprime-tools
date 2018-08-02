@@ -43,7 +43,7 @@ HAS_CHANGE=0
 for HOOK_DIRECTORY in "${HOOK_DIRECTORIES[@]}"; do
   if [[ -d "${HOOK_DIRECTORY}" ]]; then
     for HOOK_FILE in "${HOOK_DIRECTORY}"/*; do
-      if [[ "${HOOK_FILE}" == *".sh" ]]; then
+      if [[ "${HOOK_FILE}" != *"README.md" ]]; then
         "${HOOK_FILE}" ${HOOK_ARGUMENTS}
 
         if [[ $? -ne 0 ]]; then
