@@ -15,7 +15,7 @@ source "${GITPRIME_TOOLS_HOME}/library/common.sh"
 # shellcheck source=../../library/cli.sh
 source "${GITPRIME_TOOLS_HOME}/library/cli.sh"
 
-declare -aG GPT_HOOK_NAMES
+declare -ag GPT_HOOK_NAMES
 
 GPT_HOOK_NAMES[0]="applypatch-msg"
 GPT_HOOK_NAMES[1]="commit-msg"
