@@ -37,6 +37,12 @@ This defaults to `${HOME}/.gitprime-tools`
 git hooks.  (See 'Commit Hooks' below.)  For example:
   * For JIRA:  https://jira.mydomain.com/browse will be converted to https://jira.mydomain.com/browse/\<Ticket Number\>
 * --help:  Will show information about how to use the installer.
+
+### Recommended
+The toolset can be updated by specifying a specific version number.  However, for the tool to automatically
+detect the latest version, or to list available versions, we require the 'jq' package to be installed.
+
+More information about 'jq' and how to install it can be found at [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/)
   
 ## Usage
 Once the tools are properly installed and activated in your terminal, there are several commands you can 
