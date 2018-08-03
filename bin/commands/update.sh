@@ -198,6 +198,8 @@ function execute_gpt_command() {
       log.warn "You specified a new home directory that does not match your currently installed version."
       log.warn "You will need to update your reload your shell for changes to take effect."
     fi
+
+    log.info "Successfully updated GitPrime Tools to version ${version}."
   else
     log.error "The expected files were not found in the update artifact."
 
