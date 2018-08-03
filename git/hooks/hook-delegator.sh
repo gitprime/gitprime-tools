@@ -36,7 +36,7 @@ declare -a HOOK_DIRECTORIES
 HOOK_DIRECTORIES[0]="${GITPRIME_TOOLS_HOME}/git/hooks/${HOOK_NAME}"
 
 # This directory should be any hooks in the project
-HOOK_DIRECTORIES[1]="$(pwd)/.gp-tools/hooks/${HOOK_NAME}"
+HOOK_DIRECTORIES[1]="$(pwd)/.gpt/hooks/${HOOK_NAME}"
 
 HAS_CHANGE=0
 
@@ -44,7 +44,7 @@ for HOOK_DIRECTORY in "${HOOK_DIRECTORIES[@]}"; do
   if [[ -d "${HOOK_DIRECTORY}" ]]; then
     for HOOK_FILE in "${HOOK_DIRECTORY}"/*; do
       if [[ "${HOOK_FILE}" != *"README.md" ]]; then
-        "${HOOK_FILE}" ${HOOK_ARGUMENTS}
+        source "${HOOK_FILE}" ${HOOK_ARGUMENTS}
 
         if [[ $? -ne 0 ]]; then
           log.error "Failed to execute hook at ${HOOK_DIRECTORY}/${HOOK_NAME}"
