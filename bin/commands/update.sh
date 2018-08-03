@@ -37,6 +37,7 @@ function add_arguments() {
   add_cli_argument "allow-prerelease" "p" ${GPT_ARG_TYPE_FLAG} 0 "If set, the updater will use pre-release versions of the tools."
   add_cli_argument "directory" "d" ${GPT_ARG_TYPE_VALUE} 0 "The directory where you want your new GitPrime Tools installation."
   add_cli_argument "ticket-url" "t" ${GPT_ARG_TYPE_VALUE} 0 "The URL of your ticket server to include in commit messages."
+  add_cli_argument "list" "l" ${GPT_ARG_TYPE_FLAG} 0 "List the available updates"
 }
 
 # The required execute_gpt_command function
@@ -50,6 +51,7 @@ function execute_gpt_command() {
   local allow_prerelease=$(get_argument_value "allow-prerelease")
   local new_home_test=$(get_argument_value "directory")
   local new_ticket_url_test=$(get_argument_value "ticket-url")
+  local do_list=$(get_argument_value "list")
 
   if [[ ! -z "${new_home_test}" ]] && [[ "${new_home_test}" != "0" ]]; then
     new_home="${new_home_test}"
@@ -59,7 +61,10 @@ function execute_gpt_command() {
     new_ticket_url="${new_ticket_url_test}"
   fi
 
-  return 0
+  if [[ ${do_list} == 1 ]]; then
+    log.warn "GitPrime Tools Releases:"
+    log.info
+  fi
 
   local download_url=0
 
@@ -127,7 +132,16 @@ function execute_gpt_command() {
 
         version="${rel_name}"
       fi
+
+      if [[ ${do_list} == 1 ]]; then
+        log.info "  GitPrime Tools Release ${rel_name} (${arg_split[1]}): ${rel_url}"
+      fi
     done < "${parsed_release_file}"
+
+    if [[ ${do_list} == 1 ]]; then
+      log.info
+      log.warn "Latest Release ${version}: ${download_url}"
+    fi
 
     if [[ ${download_url} == 0 ]]; then
       log.error "Unable to find the current download version."
@@ -136,6 +150,11 @@ function execute_gpt_command() {
     fi
   else
     download_url="${INSTALL_ARCHIVE_BASE_URL}/${version}"
+  fi
+
+  if [[ ${do_list} == 1 ]]; then
+    # No need to continue
+    return 0
   fi
 
   log.info "Getting download from: ${download_url}"
@@ -188,8 +207,6 @@ function execute_gpt_command() {
 
 function destroy() {
   # Nothing really to do here.
-  log.info "Completed update of GitPrime Tools"
-
   if [[ "${UPDATE_TEMP_DIRECTORY}" != 0 ]]; then
     rm -fr "${UPDATE_TEMP_DIRECTORY}"
   fi
