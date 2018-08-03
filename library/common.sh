@@ -299,9 +299,16 @@ function update_environment_files() {
   # to pick which one we want.  I believe we prefer .bashrc
   declare -a env_files
 
-  env_files[0]="${HOME}/.bashrc"
-  env_files[1]="${HOME}/.profile"
-  env_files[2]="${HOME}/.bash_profile"
+  # For zsh users, we need to do .zshrc.  To do that, we're going to detect zsh first
+  # and then put it at the top of the list.
+  if [[ "${SHELL}" == *"zsh" ]];
+  then
+    env_files+=("${HOME}/.zshrc")
+  fi
+
+  env_files+=("${HOME}/.bashrc")
+  env_files+=("${HOME}/.profile")
+  env_files+=("${HOME}/.bash_profile")
 
   local chosen_env_file=0
 
