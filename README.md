@@ -35,7 +35,7 @@ The installer allows for a few options on installation:
 This defaults to `${HOME}/.gitprime-tools`
 * --ticket-url:  This sets the URL of your ticket-tracking system.  This URL will be used by the ticket-enforcement
 git hooks.  (See 'Commit Hooks' below.)  For example:
-  * For JIRA:  https://jira.mydomain.com/browse will be converted to https://jira.mydomain.com/browse/<Ticket Number>
+  * For JIRA:  https://jira.mydomain.com/browse will be converted to https://jira.mydomain.com/browse/\<Ticket Number\>
 * --help:  Will show information about how to use the installer.
   
 ## Usage
