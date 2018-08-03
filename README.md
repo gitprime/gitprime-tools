@@ -63,4 +63,4 @@ GitPrime Tools were originally created to provide an extensible mechanism for us
 part of the GitPrime Tools packages is very extensible and can be used to extend and enforce developer
 workflows when using Git.
 
-More information can be found at: [Commit Hooks](hooks/README.md)
+More information can be found at: [Commit Hooks](git/hooks/README.md)
