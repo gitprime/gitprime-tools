@@ -92,7 +92,7 @@ TMP_LAST_LINE=0
 while read -r TMP_LINE; do
   TMP_LINE_TEST=$(echo -e "${TMP_LINE}" | tr -d '[:space:]')
 
-  if [[ "${TMP_LINE_TEST:0:1}" != "#"  && $TMP_LINE_TEST != "" ]]; then
+  if [[ "${TMP_LINE_TEST:0:1}" != "#" ]]; then
     TMP_LAST_LINE="${TMP_LINE}"
   fi
 done <<<"${COMMIT_MSG_DATA}"
@@ -101,25 +101,18 @@ if [[ "${GITPRIME_TOOLS_TICKET_URL}" == "" ]]; then
   log.warn "Could not find a base URL for showing tickets.  Please define it using: "
   log.warn "   export GITPRIME_TOOLS_TICKET_URL=<url to your tickets>"
 else
-  if [[ "${GITPRIME_TOOLS_TICKET_URL}" != *"/" ]]; then
-    # We don't have a trailing slash, so we want to add it
-    GITPRIME_TOOLS_TICKET_URL="${GITPRIME_TOOLS_TICKET_URL}/"
-  fi
+  echo "${TMP_LAST_LINE}" | grep -oE "${TICKET_URL_REGEX}" >> /dev/null
 
-  # Special case github issues. While we enforce a ticket pattern in commits,
-  # Github issue URLs only include a number, and have no notion of a project identifier.
-  if [[ $GITPRIME_TOOLS_TICKET_URL == https://github.com/* ]] ; then
-    TICKET_URL_NUM=${FINAL_TICKET_NUM##*-}
-  else
-    TICKET_URL_NUM=$FINAL_TICKET_NUM
-  fi
+  URL_TEST_RESULT=$?
 
-  TICKET_URL="${GITPRIME_TOOLS_TICKET_URL}${TICKET_URL_NUM}"
+  if [[ ${URL_TEST_RESULT} -ne 0 ]]; then
+    if [[ "${GITPRIME_TOOLS_TICKET_URL}" != *"/" ]]; then
+      # We don't have a trailing slash, so we want to add it
+      GITPRIME_TOOLS_TICKET_URL="${GITPRIME_TOOLS_TICKET_URL}/"
+    fi
 
-  # Look for the ticket URL as a substring of the last non whitespace line. If
-  # present, there's no need to update the message
-  if [[ ${TMP_LAST_LINE} != *$TICKET_URL* ]]; then
-    COMMIT_MSG_DATA=$(echo -e "${COMMIT_MSG_DATA}\\n\\n$TICKET_URL")
+    COMMIT_MSG_DATA=$(echo -e "${COMMIT_MSG_DATA}\n\n${GITPRIME_TOOLS_TICKET_URL}${FINAL_TICKET_NUM}")
+
     WRITE_NEW_MESSAGE=1
   fi
 fi
